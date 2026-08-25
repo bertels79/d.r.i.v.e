@@ -350,3 +350,7 @@ Smartphone-Layout überarbeitet: Kopfzeilen, Panels, Schriftgrößen, Formulare,
 ## Mobile-Fix – alle Module
 
 Der Responsive-Fix wurde auf sämtliche Hauptbereiche erweitert: Mitarbeiter, Lager, Produktion, Einkauf, Verkauf, Kasse, Provisionen, Journal und Einstellungen.
+
+## Mobile Final
+
+Der Smartphone-Breakpoint wurde auf 900 CSS-Pixel erweitert, weil einige mobile Browser trotz schmalem Display eine CSS-Viewportbreite oberhalb von 700 Pixeln melden. Die gesamte App wird nun explizit auf 100 %/100vw begrenzt. Tabellen werden auf kleinen Displays automatisch in beschriftete Karten umgewandelt.

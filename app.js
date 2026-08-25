@@ -4193,3 +4193,40 @@ async function initializeDriveSupabase() {
 
 initializeDriveSupabase();
 
+
+
+/* =========================================================
+   MOBILE TABLE LABELS – v1.1
+   ========================================================= */
+function applyMobileTableLabels(root = document) {
+  root.querySelectorAll(".employee-table").forEach(table => {
+    const labels = Array.from(table.querySelectorAll("thead th"))
+      .map(th => th.textContent.trim());
+
+    table.querySelectorAll("tbody tr").forEach(row => {
+      Array.from(row.children).forEach((cell, index) => {
+        if (cell.tagName !== "TD") return;
+        cell.dataset.label = labels[index] || "";
+      });
+    });
+  });
+}
+
+applyMobileTableLabels();
+
+const driveMobileTableObserver = new MutationObserver(mutations => {
+  let needsRefresh = false;
+  for (const mutation of mutations) {
+    if (mutation.type === "childList") {
+      needsRefresh = true;
+      break;
+    }
+  }
+  if (needsRefresh) applyMobileTableLabels();
+});
+
+driveMobileTableObserver.observe(document.getElementById("appContent") || document.body, {
+  childList:true,
+  subtree:true
+});
+
