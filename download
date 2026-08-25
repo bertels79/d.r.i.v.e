@@ -1,0 +1,10 @@
+# Betriebssystem
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Lokale Entwicklungsdateien
+*.log

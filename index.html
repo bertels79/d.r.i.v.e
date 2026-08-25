@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#3b2718">
+  <meta name="description" content="D.R.I.V.E. – Donnerfaust Raucherei Inventory & Verwaltung Engine">
+  <title>D.R.I.V.E.</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="assets/icons/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-title">D.R.I.V.E.</div>
+        <div class="brand-rule"></div>
+        <div class="brand-subtitle">Donnerfaust Raucherei<br>Inventory &amp; Verwaltung Engine</div>
+      </div>
+
+      <nav class="navigation" aria-label="Hauptnavigation">
+        <button class="nav-item active" data-page="dashboard"><span>⌂</span> Übersicht</button>
+        <button class="nav-item" data-page="employees"><span>♟</span> Mitarbeiter</button>
+        <button class="nav-item" data-page="inventory"><span>▦</span> Lager</button>
+        <button class="nav-item" data-page="production"><span>⚙</span> Produktion</button>
+        <button class="nav-item" data-page="purchases"><span>↓</span> Einkauf</button>
+        <button class="nav-item" data-page="sales"><span>↑</span> Verkauf</button>
+        <button class="nav-item" data-page="cash"><span>$</span> Kasse</button>
+        <button class="nav-item" data-page="commissions"><span>%</span> Provisionen</button>
+        <button class="nav-item" data-page="journal"><span>≡</span> Journal</button>
+        <button class="nav-item" data-page="settings"><span>⚒</span> Einstellungen</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <strong>Donnerfaust's Raucherei</strong>
+        <span>Interne Verwaltung · 1889</span>
+        <span class="version">D.R.I.V.E. v1.0</span>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <button class="menu-button" id="menuButton" aria-label="Menü öffnen">☰</button>
+        <div>
+          <div class="overline">D.R.I.V.E. · Hauptbuch</div>
+          <h1 id="pageTitle">Übersicht</h1>
+        </div>
+        <div class="topbar-info">
+          <span id="currentDate"></span>
+          <strong>Geschäftsführung</strong>
+        </div>
+      </header>
+
+      <main id="appContent">
+        <section class="page active" id="dashboard">
+          <article class="paper-panel welcome-panel">
+            <div>
+              <div class="overline">Tagesübersicht</div>
+              <h2>Kontor der Donnerfaust's Raucherei</h2>
+              <p>Kasse, Lager, Produktion, Zahlungen und Provisionen auf einen Blick.</p>
+            </div>
+            <div class="stamp">EST.<strong>1889</strong></div>
+          </article>
+
+          <section class="metrics">
+            <article class="metric-card">
+              <span>Kassenbestand</span>
+              <strong><span id="dashboardCashBalance">$ 0,00</span></strong>
+              <small><span id="dashboardCashToday">Heute +$ 0,00 / −$ 0,00</span></small>
+            </article>
+            <article class="metric-card">
+              <span>Offene Forderungen</span>
+              <strong><span id="dashboardReceivables">$ 0,00</span></strong>
+              <small>Noch zu erhalten</small>
+            </article>
+            <article class="metric-card">
+              <span>Offene Verbindlichkeiten</span>
+              <strong><span id="dashboardPayables">$ 0,00</span></strong>
+              <small>Noch zu bezahlen</small>
+            </article>
+            <article class="metric-card">
+              <span>Offene Provisionen</span>
+              <strong><span id="dashboardCommissions">$ 0,00</span></strong>
+              <small>Noch auszuzahlen</small>
+            </article>
+          </section>
+
+          <section class="two-columns">
+            <article class="paper-panel">
+              <div class="panel-heading">
+                <div><div class="overline">Produktion</div><h3>Heute hergestellt</h3></div>
+                <div class="large-number" id="dashboardProductionToday">0</div>
+              </div>
+              <div id="dashboardProductionBreakdown"></div>
+              <button class="period-button" data-go="production">Produktion öffnen</button>
+            </article>
+
+            <article class="paper-panel">
+              <div class="panel-heading">
+                <div><div class="overline">Bestandskontrolle</div><h3>Lagerwarnungen</h3></div>
+                <div class="ornament">⚠</div>
+              </div>
+              <div id="dashboardInventoryWarnings"></div>
+              <button class="period-button" data-go="inventory">Lager prüfen</button>
+            </article>
+          </section>
+
+          <article class="paper-panel">
+            <div class="overline">Schnellzugriff</div>
+            <h3>Neuen Vorgang erfassen</h3>
+            <div class="quick-actions">
+              <button data-go="production"><strong>Produktion erfassen</strong><small>Herstellung eintragen</small></button>
+              <button data-go="sales"><strong>Verkauf erfassen</strong><small>Ware und Zahlung buchen</small></button>
+              <button data-go="purchases"><strong>Einkauf erfassen</strong><small>Wareneingang eintragen</small></button>
+              <button data-go="inventory"><strong>Lager öffnen</strong><small>Bestände prüfen und korrigieren</small></button>
+            </div>
+          </article>
+
+          <article class="paper-panel">
+            <div class="overline">Letzte Einträge</div>
+            <h3>Journal</h3>
+<div id="dashboardRecentJournal"></div>
+          </article>
+        </section>
+
+        <section class="page" id="employees">
+          <div class="employees-layout">
+            <article class="paper-panel">
+              <div class="panel-heading">
+                <div>
+                  <div class="overline">Personalakte</div>
+                  <h2>Mitarbeiter</h2>
+                  <p class="section-intro">Mitarbeiter anlegen, bearbeiten und verwalten. Ausgeschiedene Mitarbeiter bleiben für Historie und Provisionen erhalten.</p>
+                </div>
+                <button class="period-button" id="newEmployeeButton">Neuen Mitarbeiter anlegen</button>
+              </div>
+
+              <div class="employee-summary">
+                <div><span>Aktiv</span><strong id="employeeActiveCount">0</strong></div>
+                <div><span>Gekündigt</span><strong id="employeeInactiveCount">0</strong></div>
+                <div><span>Gesamt</span><strong id="employeeTotalCount">0</strong></div>
+              </div>
+
+              <div class="employee-toolbar">
+                <input type="search" id="employeeSearch" placeholder="Mitarbeiter suchen ...">
+                <select id="employeeStatusFilter" aria-label="Status filtern">
+                  <option value="active">Aktive Mitarbeiter</option>
+                </select>
+              </div>
+
+              <div class="employee-table-wrap">
+                <table class="employee-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Status</th>
+                      <th>Eintritt</th>
+                      <th>Rolle</th>
+                      <th>Aktionen</th>
+                    </tr>
+                  </thead>
+                  <tbody id="employeeTableBody"></tbody>
+                </table>
+              </div>
+
+              <div id="employeeEmptyState" class="empty-state hidden">
+                Noch keine Mitarbeiter vorhanden.
+              </div>
+            </article>
+
+            <div class="drive-modal" id="employeeModal" aria-hidden="true">
+              <div class="drive-modal-backdrop" data-close-modal="employeeModal"></div>
+              <aside class="paper-panel employee-form-panel drive-modal-card" role="dialog" aria-modal="true" aria-labelledby="employeeFormTitle">
+                <button type="button" class="modal-close" data-close-modal="employeeModal" aria-label="Fenster schließen">×</button>
+              <div class="overline" id="employeeFormMode">Neue Personalakte</div>
+              <h3 id="employeeFormTitle">Mitarbeiter anlegen</h3>
+
+              <form id="employeeForm">
+                <input type="hidden" id="employeeId">
+
+                <label>
+                  Vorname
+                  <input id="employeeFirstName" type="text" required maxlength="60">
+                </label>
+
+                <label>
+                  Nachname
+                  <input id="employeeLastName" type="text" required maxlength="60">
+                </label>
+
+                <label>
+                  Eintrittsdatum
+                  <input id="employeeStartDate" type="date" required>
+                </label>
+
+                <label>
+                  Rolle
+                  <select id="employeeRoleSelect">
+                    <option value="">Keine Rolle</option>
+                  </select>
+                </label>
+
+                <label>
+                  Notiz
+                  <textarea id="employeeNote" rows="5" maxlength="500" placeholder="Optional"></textarea>
+                </label>
+
+                <div class="form-actions">
+                  <button type="submit" class="period-button">Speichern</button>
+                  <button type="button" class="paper-button" id="employeeCancelButton">Zurücksetzen</button>
+                </div>
+              </form>
+
+              <div class="form-note">
+                <strong>Hinweis:</strong>
+                Mitarbeiter werden nicht gelöscht. Beim Ausscheiden wird nur der Status geändert, damit alte Verkäufe, Produktionen und Provisionen später nachvollziehbar bleiben.
+              </div>
+            </aside>
+            </div>
+          </div>
+        </section>
+        <section class="page" id="inventory">
+          <div class="inventory-header paper-panel">
+            <div>
+              <div class="overline">Warenbuch</div>
+              <h2>Lager &amp; Stammdaten</h2>
+              <p class="section-intro">Rohstoffe, Produkte, Rezepte und Lagerbestände verwalten. Neue Einträge können jederzeit ohne Änderung am Programmcode angelegt werden.</p>
+            </div>
+            <div class="inventory-header-actions">
+              <button class="period-button" id="newMaterialButton">Rohstoff hinzufügen</button>
+              <button class="period-button" id="newProductButton">Produkt hinzufügen</button>
+            </div>
+          </div>
+
+          <div class="inventory-tabs paper-panel">
+            <button class="inventory-tab active" data-inventory-tab="materials">Rohstoffe</button>
+            <button class="inventory-tab" data-inventory-tab="products">Produkte</button>
+            <button class="inventory-tab" data-inventory-tab="stock">Lagerbestand</button>
+            <button class="inventory-tab" data-inventory-tab="adjustments">Korrekturen</button>
+          </div>
+
+          <section class="inventory-tab-panel active" id="inventory-materials">
+            <div class="inventory-grid">
+              <article class="paper-panel">
+                <div class="panel-heading">
+                  <div>
+                    <div class="overline">Stammdaten</div>
+                    <h3>Rohstoffe</h3>
+                  </div>
+                  <strong id="materialCount">0</strong>
+                </div>
+
+                <div class="employee-toolbar">
+                  <input type="search" id="materialSearch" placeholder="Rohstoff suchen ...">
+                  <select id="materialStatusFilter">
+                    <option value="all">Alle Status</option>
+                    <option value="active">Nur aktiv</option>
+                    <option value="inactive">Nur deaktiviert</option>
+                  </select>
+                </div>
+
+                <div class="employee-table-wrap">
+                  <table class="employee-table">
+                    <thead>
+                      <tr>
+                        <th>Rohstoff</th>
+                        <th>Einheit</th>
+                        <th>Einkauf</th>
+                        <th>Bestand</th>
+                        <th>Mindestbestand</th>
+                        <th>Aktionen</th>
+                      </tr>
+                    </thead>
+                    <tbody id="materialTableBody"></tbody>
+                  </table>
+                </div>
+
+                <div id="materialEmptyState" class="empty-state hidden">Noch keine Rohstoffe vorhanden.</div>
+              </article>
+
+              <div class="drive-modal" id="materialModal" aria-hidden="true">
+                <div class="drive-modal-backdrop" data-close-modal="materialModal"></div>
+                <aside class="paper-panel employee-form-panel drive-modal-card" id="materialFormPanel" role="dialog" aria-modal="true" aria-labelledby="materialFormTitle">
+                  <button type="button" class="modal-close" data-close-modal="materialModal" aria-label="Fenster schließen">×</button>
+                <div class="overline" id="materialFormMode">Neuer Rohstoff</div>
+                <h3 id="materialFormTitle">Rohstoff anlegen</h3>
+
+                <form id="materialForm">
+                  <input type="hidden" id="materialId">
+
+                  <label>
+                    Name
+                    <input id="materialName" type="text" required maxlength="80">
+                  </label>
+
+                  <label>
+                    Kategorie
+                    <input id="materialCategory" type="text" value="Rohstoff" maxlength="60">
+                  </label>
+
+                  <label>
+                    Einheit
+                    <select id="materialUnit">
+                      <option value="Stück">Stück</option>
+                      <option value="g">g</option>
+                      <option value="kg">kg</option>
+                      <option value="ml">ml</option>
+                      <option value="l">l</option>
+                      <option value="Einheit">Einheit</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Einkaufspreis-Art
+                    <select id="materialCostType">
+                      <option value="money">Dollar</option>
+                      <option value="resource">Anderer Lagerartikel</option>
+                      <option value="none">Kein Einkaufspreis</option>
+                    </select>
+                  </label>
+
+                  <div id="materialMoneyCostFields">
+                    <label>
+                      Einkaufspreis $
+                      <input id="materialPurchasePrice" type="number" min="0" step="0.01" value="0">
+                    </label>
+                  </div>
+
+                  <div id="materialResourceCostFields" class="hidden">
+                    <label>
+                      Benötigte Menge
+                      <input id="materialResourceCostAmount" type="number" min="0" step="0.01" value="1">
+                    </label>
+                    <label>
+                      Bezahlt / hergestellt mit
+                      <select id="materialResourceCostItem"></select>
+                    </label>
+                  </div>
+
+                  <label>
+                    Anfangsbestand
+                    <input id="materialStock" type="number" min="0" step="0.01" value="0">
+                  </label>
+
+                  <label>
+                    Mindestbestand
+                    <input id="materialMinStock" type="number" min="0" step="0.01" value="0">
+                  </label>
+
+                  <div class="form-actions">
+                    <button class="period-button" type="submit">Speichern</button>
+                    <button class="paper-button" type="button" id="materialCancelButton">Zurücksetzen</button>
+                  </div>
+                </form>
+                </aside>
+              </div>
+            </div>
+          </section>
+
+          <section class="inventory-tab-panel" id="inventory-products">
+            <div class="inventory-grid">
+              <article class="paper-panel">
+                <div class="panel-heading">
+                  <div>
+                    <div class="overline">Stammdaten</div>
+                    <h3>Produkte</h3>
+                  </div>
+                  <strong id="productCount">0</strong>
+                </div>
+
+                <div class="employee-toolbar">
+                  <input type="search" id="productSearch" placeholder="Produkt suchen ...">
+                  <select id="productStatusFilter">
+                    <option value="all">Alle Status</option>
+                    <option value="active">Nur aktiv</option>
+                    <option value="inactive">Nur deaktiviert</option>
+                  </select>
+                </div>
+
+                <div class="product-card-list" id="productCardList"></div>
+                <div id="productEmptyState" class="empty-state hidden">Noch keine Produkte vorhanden.</div>
+              </article>
+
+              <div class="drive-modal" id="productModal" aria-hidden="true">
+                <div class="drive-modal-backdrop" data-close-modal="productModal"></div>
+                <aside class="paper-panel employee-form-panel drive-modal-card" id="productFormPanel" role="dialog" aria-modal="true" aria-labelledby="productFormTitle">
+                  <button type="button" class="modal-close" data-close-modal="productModal" aria-label="Fenster schließen">×</button>
+                <div class="overline" id="productFormMode">Neues Produkt</div>
+                <h3 id="productFormTitle">Produkt anlegen</h3>
+
+                <form id="productForm">
+                  <input type="hidden" id="productId">
+
+                  <label>
+                    Produktname
+                    <input id="productName" type="text" required maxlength="80">
+                  </label>
+
+                  <label>
+                    Kategorie
+                    <select id="productCategory">
+                      <option value="Zigaretten">Zigaretten</option>
+                      <option value="Zigarren">Zigarren</option>
+                      <option value="Pfeifentabak">Pfeifentabak</option>
+                      <option value="Pfeifen">Pfeifen</option>
+                      <option value="Anzünder">Anzünder</option>
+                      <option value="Sonstiges">Sonstiges</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Verkaufspreis $
+                    <input id="productSalePrice" type="number" min="0" step="0.01" value="0" required>
+                  </label>
+
+                  <label>
+                    Optionaler Einkaufspreis $
+                    <input id="productPurchasePrice" type="number" min="0" step="0.01" value="0">
+                  </label>
+
+                  <label>
+                    Anfangsbestand
+                    <input id="productStock" type="number" min="0" step="0.01" value="0">
+                  </label>
+
+                  <label>
+                    Mindestbestand
+                    <input id="productMinStock" type="number" min="0" step="0.01" value="0">
+                  </label>
+
+                  <div class="recipe-editor">
+                    <div class="recipe-editor-heading">
+                      <strong>Rezept</strong>
+                      <small>Rohstoffe oder bereits vorhandene Produkte können verwendet werden.</small>
+                    </div>
+
+                    <div class="recipe-add-row">
+                      <select id="recipeIngredient"></select>
+                      <input id="recipeAmount" type="number" min="0.01" step="0.01" value="1">
+                      <button type="button" class="paper-button" id="addRecipeIngredientButton">Hinzufügen</button>
+                    </div>
+
+                    <div id="recipeDraftList" class="recipe-draft-list"></div>
+                  </div>
+
+                  <div class="form-actions">
+                    <button class="period-button" type="submit">Speichern</button>
+                    <button class="paper-button" type="button" id="productCancelButton">Zurücksetzen</button>
+                  </div>
+                </form>
+                </aside>
+              </div>
+            </div>
+          </section>
+
+          <section class="inventory-tab-panel" id="inventory-stock">
+            <article class="paper-panel">
+              <div class="panel-heading">
+                <div>
+                  <div class="overline">Bestandsbuch</div>
+                  <h3>Aktueller Lagerbestand</h3>
+                </div>
+              </div>
+
+              <div class="employee-toolbar">
+                <input type="search" id="stockSearch" placeholder="Lager durchsuchen ...">
+                <select id="stockTypeFilter">
+                  <option value="all">Alles</option>
+                  <option value="material">Rohstoffe</option>
+                  <option value="product">Produkte</option>
+                </select>
+              </div>
+
+              <div class="employee-table-wrap">
+                <table class="employee-table">
+                  <thead>
+                    <tr>
+                      <th>Artikel</th>
+                      <th>Art</th>
+                      <th>Bestand</th>
+                      <th>Mindestbestand</th>
+                      <th>Status</th>
+                      <th>Aktion</th>
+                    </tr>
+                  </thead>
+                  <tbody id="stockTableBody"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="inventory-tab-panel" id="inventory-adjustments">
+            <div class="inventory-grid">
+              <article class="paper-panel">
+                <div class="overline">Historie</div>
+                <h3>Lagerkorrekturen</h3>
+                <div class="journal" id="adjustmentHistory"></div>
+                <div id="adjustmentEmptyState" class="empty-state hidden">Noch keine Lagerkorrekturen vorhanden.</div>
+              </article>
+
+              <aside class="paper-panel employee-form-panel">
+                <div class="overline">Bestand berichtigen</div>
+                <h3>Neue Lagerkorrektur</h3>
+
+                <form id="adjustmentForm">
+                  <label>
+                    Artikel
+                    <select id="adjustmentItem" required></select>
+                  </label>
+
+                  <label>
+                    Neuer tatsächlicher Bestand
+                    <input id="adjustmentNewStock" type="number" min="0" step="0.01" required>
+                  </label>
+
+                  <label>
+                    Grund
+                    <textarea id="adjustmentReason" rows="4" required maxlength="300" placeholder="z. B. Inventur, Bruch, Fehlbuchung"></textarea>
+                  </label>
+
+                  <button class="period-button" type="submit">Korrektur speichern</button>
+                </form>
+
+                <div class="form-note">
+                  Der bisherige Bestand wird nicht gelöscht. D.R.I.V.E. speichert alten Bestand, neuen Bestand, Differenz, Datum und Grund.
+                </div>
+              </aside>
+            </div>
+          </section>
+        </section>
+        <section class="page" id="production">
+          <div class="production-header paper-panel">
+            <div>
+              <div class="overline">Fertigungsbuch</div>
+              <h2>Produktion</h2>
+              <p class="section-intro">Produktionen erfassen, Zutaten automatisch aus dem Lager abbuchen, Fertigwaren einlagern und Provisionen berechnen.</p>
+            </div>
+            <button class="period-button" id="newProductionButton">Produktion erfassen</button>
+          </div>
+
+          <section class="metrics production-metrics">
+            <article class="metric-card">
+              <span>Heute hergestellt</span>
+              <strong id="productionTodayCount">0</strong>
+              <small>Produzierte Einheiten</small>
+            </article>
+            <article class="metric-card">
+              <span>Produktionswert heute</span>
+              <strong id="productionTodayValue">$ 0,00</strong>
+              <small>Verkaufspreis × Menge</small>
+            </article>
+            <article class="metric-card">
+              <span>10 % Produktionsgewinn</span>
+              <strong id="productionTodayProfit">$ 0,00</strong>
+              <small>Nur Berechnungsgrundlage</small>
+            </article>
+            <article class="metric-card">
+              <span>Provisionen heute</span>
+              <strong id="productionTodayCommission">$ 0,00</strong>
+              <small>Noch nicht ausgezahlt</small>
+            </article>
+          </section>
+
+          <article class="paper-panel">
+            <div class="panel-heading">
+              <div>
+                <div class="overline">Historie</div>
+                <h3>Produktionsbuch</h3>
+              </div>
+              <div class="production-filter-group">
+                <input type="search" id="productionSearch" placeholder="Produktion suchen ...">
+                <select id="productionEmployeeFilter">
+                  <option value="all">Alle Mitarbeiter</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="employee-table-wrap">
+              <table class="employee-table production-table">
+                <thead>
+                  <tr>
+                    <th>Zeit</th>
+                    <th>Mitarbeiter</th>
+                    <th>Produkt</th>
+                    <th>Menge</th>
+                    <th>Produktionswert</th>
+                    <th>10 % Gewinn</th>
+                    <th>Provision</th>
+                  </tr>
+                </thead>
+                <tbody id="productionHistoryBody"></tbody>
+              </table>
+            </div>
+
+            <div id="productionEmptyState" class="empty-state hidden">Noch keine Produktionen erfasst.</div>
+          </article>
+
+          <div class="drive-modal" id="productionModal" aria-hidden="true">
+            <div class="drive-modal-backdrop" data-close-modal="productionModal"></div>
+            <aside class="paper-panel employee-form-panel drive-modal-card production-modal-card" role="dialog" aria-modal="true" aria-labelledby="productionFormTitle">
+              <button type="button" class="modal-close" data-close-modal="productionModal" aria-label="Fenster schließen">×</button>
+
+              <div class="overline">Neue Fertigung</div>
+              <h3 id="productionFormTitle">Produktion erfassen</h3>
+
+              <form id="productionForm">
+                <label>
+                  Mitarbeiter
+                  <select id="productionEmployee" required></select>
+                </label>
+
+                <label>
+                  Produkt
+                  <select id="productionProduct" required></select>
+                </label>
+
+                <label>
+                  Menge
+                  <input id="productionQuantity" type="number" min="1" step="1" value="1" required>
+                </label>
+
+                <div class="production-calculation">
+                  <div>
+                    <span>Verkaufspreis je Einheit</span>
+                    <strong id="productionUnitPrice">$ 0,00</strong>
+                  </div>
+                  <div>
+                    <span>Produktionswert</span>
+                    <strong id="productionTotalValue">$ 0,00</strong>
+                  </div>
+                  <div>
+                    <span>10 % Produktionsgewinn</span>
+                    <strong id="productionProfitValue">$ 0,00</strong>
+                  </div>
+                  <div>
+                    <span>Mitarbeiterprovision</span>
+                    <strong id="productionCommissionValue">$ 0,00</strong>
+                  </div>
+                </div>
+
+                <div class="recipe-check">
+                  <div class="recipe-editor-heading">
+                    <strong>Benötigte Zutaten</strong>
+                    <small>D.R.I.V.E. prüft vor dem Buchen automatisch den aktuellen Lagerbestand.</small>
+                  </div>
+                  <div id="productionIngredientCheck"></div>
+                </div>
+
+                <div id="productionWarning" class="production-warning hidden"></div>
+
+                <div class="form-actions">
+                  <button type="submit" class="period-button" id="productionSubmitButton">Produktion buchen</button>
+                  <button type="button" class="paper-button" id="productionCancelButton">Abbrechen</button>
+                </div>
+              </form>
+
+              <div class="form-note">
+                Der errechnete 10-%-Produktionsgewinn verändert die Kasse nicht. Er dient ausschließlich als Grundlage für die Provision.
+              </div>
+            </aside>
+          </div>
+        </section>
+        <section class="page" id="purchases">
+          <div class="production-header paper-panel">
+            <div>
+              <div class="overline">Einkaufsbuch</div>
+              <h2>Einkauf</h2>
+              <p class="section-intro">Wareneingänge erfassen, Lager automatisch erhöhen und zwischen bezahlt, Rechnung und offener Zahlung unterscheiden.</p>
+            </div>
+            <div class="inventory-header-actions">
+              <button class="supplier-manage-button" id="manageSuppliersButton">Lieferanten verwalten</button>
+              <button class="period-button" id="newPurchaseButton">Einkauf erfassen</button>
+            </div>
+          </div>
+
+          <section class="metrics production-metrics">
+            <article class="metric-card">
+              <span>Einkäufe heute</span>
+              <strong id="purchaseTodayCount">0</strong>
+              <small>Erfasste Vorgänge</small>
+            </article>
+            <article class="metric-card">
+              <span>Ausgaben heute</span>
+              <strong id="purchaseTodayPaid">$ 0,00</strong>
+              <small>Bereits bezahlt</small>
+            </article>
+            <article class="metric-card">
+              <span>Offene Rechnungen</span>
+              <strong id="purchaseOpenValue">$ 0,00</strong>
+              <small>Noch zu bezahlen</small>
+            </article>
+            <article class="metric-card">
+              <span>Offene Vorgänge</span>
+              <strong id="purchaseOpenCount">0</strong>
+              <small>Rechnung oder offen</small>
+            </article>
+          </section>
+
+          <article class="paper-panel">
+            <div class="panel-heading">
+              <div>
+                <div class="overline">Historie</div>
+                <h3>Einkaufsbuch</h3>
+              </div>
+              <div class="production-filter-group">
+                <input type="search" id="purchaseSearch" placeholder="Einkauf suchen ...">
+                <select id="purchaseStatusFilter">
+                  <option value="all">Alle Status</option>
+                  <option value="paid">Bezahlt</option>
+                  <option value="invoice">Rechnung</option>
+                  <option value="open">Offen</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="employee-table-wrap">
+              <table class="employee-table purchase-table">
+                <thead>
+                  <tr>
+                    <th>Zeit</th>
+                    <th>Mitarbeiter</th>
+                    <th>Lieferant</th>
+                    <th>Artikel</th>
+                    <th>Menge</th>
+                    <th>Kosten</th>
+                    <th>Status</th>
+                    <th>Aktion</th>
+                  </tr>
+                </thead>
+                <tbody id="purchaseHistoryBody"></tbody>
+              </table>
+            </div>
+
+            <div id="purchaseEmptyState" class="empty-state hidden">Noch keine Einkäufe erfasst.</div>
+          </article>
+
+          <div class="drive-modal" id="purchaseModal" aria-hidden="true">
+            <div class="drive-modal-backdrop" data-close-modal="purchaseModal"></div>
+            <aside class="paper-panel employee-form-panel drive-modal-card production-modal-card" role="dialog" aria-modal="true" aria-labelledby="purchaseFormTitle">
+              <button type="button" class="modal-close" data-close-modal="purchaseModal" aria-label="Fenster schließen">×</button>
+
+              <div class="overline">Neuer Wareneingang</div>
+              <h3 id="purchaseFormTitle">Einkauf erfassen</h3>
+
+              <form id="purchaseForm">
+                <label>
+                  Mitarbeiter
+                  <select id="purchaseEmployee" required></select>
+                </label>
+
+                <label>
+                  Lieferant
+                  <div class="supplier-select-row">
+                    <select id="purchaseSupplier" required></select>
+                    <button type="button" class="paper-button" id="quickAddSupplierButton">+ Neu</button>
+                  </div>
+                </label>
+
+                <label>
+                  Artikel
+                  <select id="purchaseItem" required></select>
+                </label>
+
+                <label>
+                  Menge
+                  <input id="purchaseQuantity" type="number" min="0.01" step="0.01" value="1" required>
+                </label>
+
+                <div id="purchaseMoneyFields">
+                  <label>
+                    Einkaufspreis je Einheit $
+                    <input id="purchaseUnitPrice" type="number" min="0" step="0.01" value="0" required>
+                  </label>
+
+                  <label>
+                    Zahlungsstatus
+                    <select id="purchasePaymentStatus">
+                      <option value="paid">Bezahlt</option>
+                      <option value="invoice">Rechnung</option>
+                      <option value="open">Offen</option>
+                    </select>
+                  </label>
+
+                  <label id="purchaseDueDateLabel" class="hidden">
+                    Fällig am
+                    <input id="purchaseDueDate" type="date">
+                  </label>
+                </div>
+
+                <div id="purchaseResourceFields" class="hidden">
+                  <div class="resource-payment-box">
+                    <div class="overline">Sachkosten</div>
+                    <strong id="purchaseResourceDescription">—</strong>
+                    <small>Dieser Einkauf wird mit einem Lagerartikel statt mit Geld bezahlt.</small>
+                  </div>
+                </div>
+
+                <label>
+                  Notiz
+                  <textarea id="purchaseNote" rows="4" maxlength="400" placeholder="Optional"></textarea>
+                </label>
+
+                <div class="production-calculation">
+                  <div>
+                    <span>Bestand vorher</span>
+                    <strong id="purchaseStockBefore">0</strong>
+                  </div>
+                  <div>
+                    <span>Bestand nachher</span>
+                    <strong id="purchaseStockAfter">0</strong>
+                  </div>
+                  <div>
+                    <span>Gesamtkosten</span>
+                    <strong id="purchaseTotalCost">$ 0,00</strong>
+                  </div>
+                  <div>
+                    <span>Kassenwirkung</span>
+                    <strong id="purchaseCashImpact">$ 0,00</strong>
+                  </div>
+                </div>
+
+                <div id="purchaseWarning" class="production-warning hidden"></div>
+
+                <div class="form-actions">
+                  <button type="submit" class="period-button" id="purchaseSubmitButton">Einkauf buchen</button>
+                  <button type="button" class="paper-button" id="purchaseCancelButton">Abbrechen</button>
+                </div>
+              </form>
+            </aside>
+          </div>
+        </section>
+        <div class="drive-modal" id="supplierModal" aria-hidden="true">
+          <div class="drive-modal-backdrop" data-close-modal="supplierModal"></div>
+          <aside class="paper-panel drive-modal-card supplier-modal-card" role="dialog" aria-modal="true" aria-labelledby="supplierModalTitle">
+            <button type="button" class="modal-close" data-close-modal="supplierModal" aria-label="Fenster schließen">×</button>
+
+            <div class="overline">Stammdaten</div>
+            <h3 id="supplierModalTitle">Lieferanten verwalten</h3>
+
+            <div class="supplier-manager-grid">
+              <section>
+                <div class="employee-toolbar">
+                  <input type="search" id="supplierSearch" placeholder="Lieferant suchen ...">
+                  <select id="supplierStatusFilter">
+                    <option value="all">Alle Status</option>
+                    <option value="active">Nur aktiv</option>
+                    <option value="inactive">Nur deaktiviert</option>
+                  </select>
+                </div>
+
+                <div class="employee-table-wrap">
+                  <table class="employee-table">
+                    <thead>
+                      <tr>
+                        <th>Lieferant</th>
+                        <th>Ansprechpartner</th>
+                        <th>Telegram</th>
+                        <th>Status</th>
+                        <th>Aktionen</th>
+                      </tr>
+                    </thead>
+                    <tbody id="supplierTableBody"></tbody>
+                  </table>
+                </div>
+
+                <div id="supplierEmptyState" class="empty-state hidden">
+                  Noch keine Lieferanten vorhanden.
+                </div>
+              </section>
+
+              <section class="supplier-form-area">
+                <div class="overline" id="supplierFormMode">Neuer Lieferant</div>
+                <h3 id="supplierFormTitle">Lieferant anlegen</h3>
+
+                <form id="supplierForm">
+                  <input type="hidden" id="supplierId">
+
+                  <label>
+                    Name / Firma
+                    <input id="supplierName" type="text" maxlength="100" required>
+                  </label>
+
+                  <label>
+                    Ansprechpartner
+                    <input id="supplierContact" type="text" maxlength="100" placeholder="Optional">
+                  </label>
+
+                  <label>
+                    Telegram-Nummer
+                    <input id="supplierTelegram" type="text" maxlength="80" placeholder="z. B. @Name oder Nummer">
+                  </label>
+
+                  <label>
+                    Notiz
+                    <textarea id="supplierNote" rows="4" maxlength="400" placeholder="Optional"></textarea>
+                  </label>
+
+                  <div class="form-actions">
+                    <button type="submit" class="period-button">Speichern</button>
+                    <button type="button" class="paper-button" id="supplierCancelButton">Zurücksetzen</button>
+                  </div>
+                </form>
+              </section>
+            </div>
+          </aside>
+        </div>
+
+        <section class="page" id="sales">
+          <div class="production-header paper-panel">
+            <div>
+              <div class="overline">Verkaufsbuch</div>
+              <h3>Verkauf</h3>
+              <p>Produkte verkaufen, Lager automatisch abbuchen und Einnahmen sowie offene Forderungen erfassen.</p>
+            </div>
+            <div class="inventory-header-actions">
+              <button class="supplier-manage-button" id="manageCustomersButton">Kunden verwalten</button>
+              <button class="period-button" id="newSaleButton">Verkauf erfassen</button>
+            </div>
+          </div>
+
+          <section class="metrics production-metrics">
+            <article class="metric-card">
+              <span>Verkäufe heute</span>
+              <strong id="salesTodayCount">0</strong>
+              <small>Erfasste Vorgänge</small>
+            </article>
+            <article class="metric-card">
+              <span>Einnahmen heute</span>
+              <strong id="salesTodayRevenue">$ 0,00</strong>
+              <small>Bereits erhalten</small>
+            </article>
+            <article class="metric-card">
+              <span>Offene Forderungen</span>
+              <strong id="salesOpenReceivables">$ 0,00</strong>
+              <small>Noch zu erhalten</small>
+            </article>
+            <article class="metric-card">
+              <span>Verkaufte Stück heute</span>
+              <strong id="salesTodayUnits">0</strong>
+              <small>Produkte</small>
+            </article>
+          </section>
+
+          <article class="paper-panel sales-history-panel">
+            <div class="panel-heading">
+              <div>
+                <div class="overline">Historie</div>
+                <h3>Verkaufsbuch</h3>
+              </div>
+              <div class="production-filter-group">
+                <input type="search" id="saleSearch" placeholder="Verkauf suchen ...">
+                <select id="saleStatusFilter">
+                  <option value="all">Alle Status</option>
+                  <option value="paid">Bezahlt</option>
+                  <option value="invoice">Rechnung</option>
+                  <option value="open">Offen</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="employee-table-wrap">
+              <table class="employee-table">
+                <thead>
+                  <tr>
+                    <th>Zeit</th>
+                    <th>Mitarbeiter</th>
+                    <th>Kunde</th>
+                    <th>Produkt</th>
+                    <th>Menge</th>
+                    <th>Erlös</th>
+                    <th>Status</th>
+                    <th>Aktion</th>
+                  </tr>
+                </thead>
+                <tbody id="saleHistoryBody"></tbody>
+              </table>
+            </div>
+            <div id="saleEmptyState" class="empty-state hidden">Noch keine Verkäufe erfasst.</div>
+          </article>
+
+          <div class="drive-modal" id="saleModal" aria-hidden="true">
+            <div class="drive-modal-backdrop" data-close-modal="saleModal"></div>
+            <aside class="paper-panel employee-form-panel drive-modal-card production-modal-card sales-modal-card" role="dialog" aria-modal="true" aria-labelledby="saleModalTitle">
+              <button type="button" class="modal-close" data-close-modal="saleModal" aria-label="Fenster schließen">×</button>
+              <div class="overline">Neuer Vorgang</div>
+              <h3 id="saleModalTitle">Verkauf erfassen</h3>
+
+              <form id="saleForm">
+                <div class="sales-form-grid">
+                  <label>
+                    Mitarbeiter
+                    <select id="saleEmployee" required></select>
+                  </label>
+
+                  <label>
+                    Kunde
+                    <div class="supplier-select-row">
+                      <select id="saleCustomer"></select>
+                      <button type="button" class="paper-button" id="quickAddCustomerButton">+ Neu</button>
+                    </div>
+                  </label>
+
+                  <label>
+                    Produkt
+                    <select id="saleProduct" required></select>
+                  </label>
+
+                  <label>
+                    Menge
+                    <input id="saleQuantity" type="number" min="1" step="1" value="1" required>
+                  </label>
+
+                  <label>
+                    Verkaufspreis / Stück
+                    <input id="saleUnitPrice" type="number" min="0" step="0.01" required>
+                  </label>
+
+                  <label>
+                    Zahlungsstatus
+                    <select id="salePaymentStatus">
+                      <option value="paid">Bezahlt</option>
+                      <option value="invoice">Rechnung</option>
+                      <option value="open">Offen</option>
+                    </select>
+                  </label>
+
+                  <label id="saleDueDateLabel" class="hidden">
+                    Fällig am
+                    <input id="saleDueDate" type="date">
+                  </label>
+
+                  <label class="sales-note-field">
+                    Notiz
+                    <textarea id="saleNote" rows="3" maxlength="400" placeholder="Optional"></textarea>
+                  </label>
+                </div>
+
+                <div class="production-calculation sales-preview">
+                  <div><span>Bestand vorher</span><strong id="saleStockBefore">—</strong></div>
+                  <div><span>Bestand danach</span><strong id="saleStockAfter">—</strong></div>
+                  <div><span>Gesamterlös</span><strong id="saleTotalRevenue">$ 0,00</strong></div>
+                  <div><span>Kassenwirkung</span><strong id="saleCashImpact">$ 0,00</strong></div>
+                </div>
+
+                <div id="saleWarning" class="form-warning hidden"></div>
+
+                <div class="form-actions">
+                  <button type="submit" class="period-button" id="saleSubmitButton">Verkauf buchen</button>
+                  <button type="button" class="paper-button" data-close-modal="saleModal">Abbrechen</button>
+                </div>
+              </form>
+            </aside>
+          </div>
+        </section>
+
+        <div class="drive-modal" id="customerModal" aria-hidden="true">
+          <div class="drive-modal-backdrop" data-close-modal="customerModal"></div>
+          <aside class="paper-panel drive-modal-card supplier-modal-card" role="dialog" aria-modal="true" aria-labelledby="customerModalTitle">
+            <button type="button" class="modal-close" data-close-modal="customerModal" aria-label="Fenster schließen">×</button>
+
+            <div class="overline">Stammdaten</div>
+            <h3 id="customerModalTitle">Kunden verwalten</h3>
+
+            <div class="supplier-manager-grid">
+              <section>
+                <div class="employee-toolbar">
+                  <input type="search" id="customerSearch" placeholder="Kunde suchen ...">
+                  <select id="customerStatusFilter">
+                    <option value="all">Alle Status</option>
+                    <option value="active">Nur aktiv</option>
+                    <option value="inactive">Nur deaktiviert</option>
+                  </select>
+                </div>
+
+                <div class="employee-table-wrap">
+                  <table class="employee-table">
+                    <thead>
+                      <tr>
+                        <th>Kunde</th>
+                        <th>Ansprechpartner</th>
+                        <th>Telegram</th>
+                        <th>Status</th>
+                        <th>Aktionen</th>
+                      </tr>
+                    </thead>
+                    <tbody id="customerTableBody"></tbody>
+                  </table>
+                </div>
+
+                <div id="customerEmptyState" class="empty-state hidden">Noch keine Kunden vorhanden.</div>
+              </section>
+
+              <section class="supplier-form-area">
+                <div class="overline" id="customerFormMode">Neuer Kunde</div>
+                <h3 id="customerFormTitle">Kunde anlegen</h3>
+
+                <form id="customerForm">
+                  <input type="hidden" id="customerId">
+
+                  <label>
+                    Name / Firma
+                    <input id="customerName" type="text" maxlength="100" required>
+                  </label>
+
+                  <label>
+                    Ansprechpartner
+                    <input id="customerContact" type="text" maxlength="100" placeholder="Optional">
+                  </label>
+
+                  <label>
+                    Telegram-Nummer
+                    <input id="customerTelegram" type="text" maxlength="80" placeholder="z. B. @Name oder Nummer">
+                  </label>
+
+                  <label>
+                    Notiz
+                    <textarea id="customerNote" rows="4" maxlength="400" placeholder="Optional"></textarea>
+                  </label>
+
+                  <div class="form-actions">
+                    <button type="submit" class="period-button">Speichern</button>
+                    <button type="button" class="paper-button" id="customerCancelButton">Zurücksetzen</button>
+                  </div>
+                </form>
+              </section>
+            </div>
+          </aside>
+        </div>
+
+        <section class="page" id="cash">
+          <div class="production-header paper-panel">
+            <div>
+              <div class="overline">Kassenbuch</div>
+              <h2>Kasse</h2>
+              <p class="section-intro">Alle bezahlten Ein- und Verkäufe sowie manuelle Einnahmen und Ausgaben in einem Kassenbuch.</p>
+            </div>
+            <div class="inventory-header-actions">
+              <button class="supplier-manage-button" id="setOpeningBalanceButton">Kassenstart festlegen</button>
+              <button class="period-button" id="newCashMovementButton">Buchung erfassen</button>
+            </div>
+          </div>
+
+          <section class="metrics production-metrics">
+            <article class="metric-card">
+              <span>Aktueller Kassenstand</span>
+              <strong id="cashCurrentBalance">$ 0,00</strong>
+              <small>Startbestand + Bewegungen</small>
+            </article>
+            <article class="metric-card">
+              <span>Einnahmen heute</span>
+              <strong id="cashTodayIncome">$ 0,00</strong>
+              <small>Heute eingegangen</small>
+            </article>
+            <article class="metric-card">
+              <span>Ausgaben heute</span>
+              <strong id="cashTodayExpenses">$ 0,00</strong>
+              <small>Heute ausgegeben</small>
+            </article>
+            <article class="metric-card">
+              <span>Bewegungen heute</span>
+              <strong id="cashTodayMovements">0</strong>
+              <small>Kassenbuchungen</small>
+            </article>
+          </section>
+
+          <article class="paper-panel">
+            <div class="panel-heading">
+              <div>
+                <div class="overline">Historie</div>
+                <h3>Kassenbuch</h3>
+              </div>
+              <div class="production-filter-group">
+                <input type="search" id="cashSearch" placeholder="Kassenbuch durchsuchen ...">
+                <select id="cashTypeFilter">
+                  <option value="all">Alle Buchungen</option>
+                  <option value="in">Nur Einnahmen</option>
+                  <option value="out">Nur Ausgaben</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="employee-table-wrap">
+              <table class="employee-table cash-table">
+                <thead>
+                  <tr>
+                    <th>Zeit</th>
+                    <th>Art</th>
+                    <th>Vorgang</th>
+                    <th>Einnahme</th>
+                    <th>Ausgabe</th>
+                    <th>Stand danach</th>
+                  </tr>
+                </thead>
+                <tbody id="cashHistoryBody"></tbody>
+              </table>
+            </div>
+
+            <div id="cashEmptyState" class="empty-state hidden">Noch keine Kassenbewegungen vorhanden.</div>
+          </article>
+
+          <div class="drive-modal" id="cashMovementModal" aria-hidden="true">
+            <div class="drive-modal-backdrop" data-close-modal="cashMovementModal"></div>
+            <aside class="paper-panel employee-form-panel drive-modal-card production-modal-card" role="dialog" aria-modal="true" aria-labelledby="cashMovementTitle">
+              <button type="button" class="modal-close" data-close-modal="cashMovementModal" aria-label="Fenster schließen">×</button>
+
+              <div class="overline">Manuelle Buchung</div>
+              <h3 id="cashMovementTitle">Kassenbewegung erfassen</h3>
+
+              <form id="cashMovementForm">
+                <label>
+                  Art
+                  <select id="cashMovementDirection">
+                    <option value="in">Einnahme</option>
+                    <option value="out">Ausgabe</option>
+                  </select>
+                </label>
+
+                <label>
+                  Betrag $
+                  <input id="cashMovementAmount" type="number" min="0.01" step="0.01" required>
+                </label>
+
+                <label>
+                  Grund / Beschreibung
+                  <input id="cashMovementDescription" type="text" maxlength="160" required placeholder="z. B. Wechselgeld, Porto, Reparatur">
+                </label>
+
+                <label>
+                  Notiz
+                  <textarea id="cashMovementNote" rows="4" maxlength="400" placeholder="Optional"></textarea>
+                </label>
+
+                <div class="production-calculation">
+                  <div>
+                    <span>Kassenstand vorher</span>
+                    <strong id="cashMovementBefore">$ 0,00</strong>
+                  </div>
+                  <div>
+                    <span>Kassenstand danach</span>
+                    <strong id="cashMovementAfter">$ 0,00</strong>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="period-button">Buchung speichern</button>
+                  <button type="button" class="paper-button" data-close-modal="cashMovementModal">Abbrechen</button>
+                </div>
+              </form>
+            </aside>
+          </div>
+
+          <div class="drive-modal" id="openingBalanceModal" aria-hidden="true">
+            <div class="drive-modal-backdrop" data-close-modal="openingBalanceModal"></div>
+            <aside class="paper-panel employee-form-panel drive-modal-card" role="dialog" aria-modal="true" aria-labelledby="openingBalanceTitle">
+              <button type="button" class="modal-close" data-close-modal="openingBalanceModal" aria-label="Fenster schließen">×</button>
+
+              <div class="overline">Kassenstart</div>
+              <h3 id="openingBalanceTitle">Startbestand festlegen</h3>
+
+              <form id="openingBalanceForm">
+                <label>
+                  Startbestand $
+                  <input id="openingBalanceAmount" type="number" min="0" step="0.01" required>
+                </label>
+
+                <div class="form-note">
+                  Der Startbestand ist der Betrag, mit dem das Kassenbuch beginnt. Er ist keine Einnahme und keine Ausgabe.
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="period-button">Startbestand speichern</button>
+                  <button type="button" class="paper-button" data-close-modal="openingBalanceModal">Abbrechen</button>
+                </div>
+              </form>
+            </aside>
+          </div>
+        </section>
+
+        <section class="page" id="commissions">
+          <div class="production-header paper-panel">
+            <div>
+              <div class="overline">Provisionsbuch</div>
+              <h2>Provisionen</h2>
+              <p class="section-intro">Provisionen der Mitarbeiter aus Verkäufen berechnen, offene Ansprüche prüfen und Auszahlungen buchen.</p>
+            </div>
+            <div class="inventory-header-actions">
+              <button class="supplier-manage-button" id="commissionRatesButton">Sätze verwalten</button>
+              <button class="period-button" id="commissionRecalculateButton">Neu berechnen</button>
+            </div>
+          </div>
+
+          <section class="metrics production-metrics">
+            <article class="metric-card">
+              <span>Offene Provisionen</span>
+              <strong id="commissionOpenTotal">$ 0,00</strong>
+              <small>Noch auszuzahlen</small>
+            </article>
+            <article class="metric-card">
+              <span>Heute entstanden</span>
+              <strong id="commissionTodayEarned">$ 0,00</strong>
+              <small>Aus Verkäufen heute</small>
+            </article>
+            <article class="metric-card">
+              <span>Heute ausgezahlt</span>
+              <strong id="commissionTodayPaid">$ 0,00</strong>
+              <small>Über die Kasse</small>
+            </article>
+            <article class="metric-card">
+              <span>Offene Ansprüche</span>
+              <strong id="commissionOpenCount">0</strong>
+              <small>Provisionsposten</small>
+            </article>
+          </section>
+
+          <article class="paper-panel">
+            <div class="panel-heading">
+              <div>
+                <div class="overline">Mitarbeiter</div>
+                <h3>Provisionsübersicht</h3>
+              </div>
+            </div>
+            <div class="employee-table-wrap">
+              <table class="employee-table">
+                <thead>
+                  <tr>
+                    <th>Mitarbeiter</th>
+                    <th>Provisionssatz</th>
+                    <th>Verkaufsumsatz</th>
+                    <th>Offen</th>
+                    <th>Ausgezahlt</th>
+                    <th>Aktion</th>
+                  </tr>
+                </thead>
+                <tbody id="commissionEmployeeBody"></tbody>
+              </table>
+            </div>
+            <div id="commissionEmployeeEmpty" class="empty-state hidden">Keine Mitarbeiter mit Provisionsdaten vorhanden.</div>
+          </article>
+
+          <article class="paper-panel">
+            <div class="panel-heading">
+              <div>
+                <div class="overline">Historie</div>
+                <h3>Provisionsbuch</h3>
+              </div>
+              <div class="production-filter-group">
+                <input type="search" id="commissionSearch" placeholder="Provision suchen ...">
+                <select id="commissionStatusFilter">
+                  <option value="all">Alle Status</option>
+                  <option value="open">Offen</option>
+                  <option value="paid">Ausgezahlt</option>
+                </select>
+              </div>
+            </div>
+            <div class="employee-table-wrap">
+              <table class="employee-table">
+                <thead>
+                  <tr>
+                    <th>Zeit</th>
+                    <th>Mitarbeiter</th>
+                    <th>Verkauf</th>
+                    <th>Umsatz</th>
+                    <th>Satz</th>
+                    <th>Provision</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="commissionHistoryBody"></tbody>
+              </table>
+            </div>
+            <div id="commissionHistoryEmpty" class="empty-state hidden">Noch keine Provisionen entstanden.</div>
+          </article>
+
+          <div class="drive-modal" id="commissionRatesModal" aria-hidden="true">
+            <div class="drive-modal-backdrop" data-close-modal="commissionRatesModal"></div>
+            <aside class="paper-panel employee-form-panel drive-modal-card production-modal-card" role="dialog" aria-modal="true" aria-labelledby="commissionRatesTitle">
+              <button type="button" class="modal-close" data-close-modal="commissionRatesModal" aria-label="Fenster schließen">×</button>
+              <div class="overline">Provisionssätze</div>
+              <h3 id="commissionRatesTitle">Sätze verwalten</h3>
+              <p class="form-note">Der Satz gilt für neue, noch nicht berechnete Verkäufe. Bereits entstandene Provisionen bleiben unverändert.</p>
+              <form id="commissionRatesForm">
+                <div id="commissionRatesList" class="commission-rates-list"></div>
+                <div class="form-actions">
+                  <button type="submit" class="period-button">Sätze speichern</button>
+                  <button type="button" class="paper-button" data-close-modal="commissionRatesModal">Abbrechen</button>
+                </div>
+              </form>
+            </aside>
+          </div>
+        </section>
+
+        <section class="page" id="journal">
+          <div class="production-header paper-panel">
+            <div>
+              <div class="overline">Hauptjournal</div>
+              <h2>Journal</h2>
+              <p class="section-intro">Chronologische Übersicht aller wichtigen Vorgänge in D.R.I.V.E.</p>
+            </div>
+            <div class="inventory-header-actions">
+              <button class="supplier-manage-button" id="journalTodayButton">Heute</button>
+              <button class="period-button" id="journalRefreshButton">Journal aktualisieren</button>
+            </div>
+          </div>
+
+          <section class="metrics production-metrics">
+            <article class="metric-card">
+              <span>Vorgänge heute</span>
+              <strong id="journalTodayCount">0</strong>
+              <small>Alle Bereiche</small>
+            </article>
+            <article class="metric-card">
+              <span>Einkäufe heute</span>
+              <strong id="journalTodayPurchases">0</strong>
+              <small>Wareneingänge</small>
+            </article>
+            <article class="metric-card">
+              <span>Verkäufe heute</span>
+              <strong id="journalTodaySales">0</strong>
+              <small>Verkaufsvorgänge</small>
+            </article>
+            <article class="metric-card">
+              <span>Produktionen heute</span>
+              <strong id="journalTodayProductions">0</strong>
+              <small>Fertigungen</small>
+            </article>
+          </section>
+
+          <article class="paper-panel">
+            <div class="panel-heading">
+              <div>
+                <div class="overline">Chronik</div>
+                <h3>Hauptjournal</h3>
+              </div>
+              <div class="production-filter-group">
+                <input type="search" id="journalSearch" placeholder="Journal durchsuchen ...">
+                <select id="journalTypeFilter">
+                  <option value="all">Alle Bereiche</option>
+                  <option value="purchase">Einkauf</option>
+                  <option value="sale">Verkauf</option>
+                  <option value="production">Produktion</option>
+                  <option value="cash">Kasse</option>
+                  <option value="inventory">Lager</option>
+                  <option value="commission">Provisionen</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="journal-timeline" id="journalTimeline"></div>
+            <div id="journalEmptyState" class="empty-state hidden">Noch keine Journal-Einträge vorhanden.</div>
+          </article>
+        </section>
+
+        <section class="page" id="settings">
+          <div class="production-header paper-panel">
+            <div>
+              <div class="overline">Systemverwaltung</div>
+              <h2>Einstellungen</h2>
+              <p class="section-intro">Rollen, Berechtigungen und grundlegende Zugriffe für D.R.I.V.E. verwalten.</p>
+            </div>
+            <div class="inventory-header-actions">
+              <button class="period-button" id="newRoleButton">Rolle anlegen</button>
+            </div>
+          </div>
+
+          <section class="metrics production-metrics">
+            <article class="metric-card">
+              <span>Rollen</span>
+              <strong id="settingsRoleCount">0</strong>
+              <small>Gespeicherte Rollen</small>
+            </article>
+            <article class="metric-card">
+              <span>Mitarbeiter</span>
+              <strong id="settingsEmployeeCount">0</strong>
+              <small>Gesamt</small>
+            </article>
+            <article class="metric-card">
+              <span>Mit Rolle</span>
+              <strong id="settingsAssignedCount">0</strong>
+              <small>Zugewiesen</small>
+            </article>
+            <article class="metric-card">
+              <span>Ohne Rolle</span>
+              <strong id="settingsUnassignedCount">0</strong>
+              <small>Noch zuweisen</small>
+            </article>
+          </section>
+
+          <article class="paper-panel">
+            <div class="panel-heading">
+              <div>
+                <div class="overline">Rechteverwaltung</div>
+                <h3>Rollen & Berechtigungen</h3>
+              </div>
+            </div>
+            <div id="roleCardList" class="role-card-list"></div>
+            <div id="roleEmptyState" class="empty-state hidden">Noch keine Rollen vorhanden.</div>
+          </article>
+
+          <article class="paper-panel">
+            <div class="panel-heading">
+              <div>
+                <div class="overline">Zuweisung</div>
+                <h3>Mitarbeiterrollen</h3>
+              </div>
+            </div>
+            <div class="employee-table-wrap">
+              <table class="employee-table">
+                <thead>
+                  <tr>
+                    <th>Mitarbeiter</th>
+                    <th>Status</th>
+                    <th>Rolle</th>
+                  </tr>
+                </thead>
+                <tbody id="employeeRoleBody"></tbody>
+              </table>
+            </div>
+            <div id="employeeRoleEmpty" class="empty-state hidden">Noch keine Mitarbeiter angelegt.</div>
+          </article>
+
+          <div class="drive-modal" id="roleModal" aria-hidden="true">
+            <div class="drive-modal-backdrop" data-close-modal="roleModal"></div>
+            <aside class="paper-panel employee-form-panel drive-modal-card settings-role-modal" role="dialog" aria-modal="true" aria-labelledby="roleModalTitle">
+              <button type="button" class="modal-close" data-close-modal="roleModal" aria-label="Fenster schließen">×</button>
+
+              <div class="overline" id="roleFormMode">Neue Rolle</div>
+              <h3 id="roleModalTitle">Rolle anlegen</h3>
+
+              <form id="roleForm">
+                <input type="hidden" id="roleId">
+
+                <label>
+                  Rollenname
+                  <input id="roleName" type="text" maxlength="80" required placeholder="z. B. Geschäftsinhaber, Verkäufer, Azubi">
+                </label>
+
+                <label>
+                  Beschreibung
+                  <textarea id="roleDescription" rows="3" maxlength="300" placeholder="Optional"></textarea>
+                </label>
+
+                <div class="permission-heading">
+                  <div>
+                    <div class="overline">Zugriffsrechte</div>
+                    <h4>Was darf diese Rolle?</h4>
+                  </div>
+                  <button type="button" class="mini-button" id="roleToggleAllButton">Alle einschalten</button>
+                </div>
+
+                <div id="permissionList" class="permission-list"></div>
+
+                <div class="form-actions">
+                  <button type="submit" class="period-button">Rolle speichern</button>
+                  <button type="button" class="paper-button" data-close-modal="roleModal">Abbrechen</button>
+                </div>
+              </form>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
