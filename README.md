@@ -345,3 +345,8 @@ Da D.R.I.V.E. bewusst ohne Benutzeranmeldung betrieben wird, erlauben die für v
 ## Mobile-Fix
 
 Smartphone-Layout überarbeitet: Kopfzeilen, Panels, Schriftgrößen, Formulare, Modale und horizontale Tabellenüberläufe sind für kleine Displays angepasst.
+
+
+## Mobile-Fix – alle Module
+
+Der Responsive-Fix wurde auf sämtliche Hauptbereiche erweitert: Mitarbeiter, Lager, Produktion, Einkauf, Verkauf, Kasse, Provisionen, Journal und Einstellungen.

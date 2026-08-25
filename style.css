@@ -1085,3 +1085,333 @@ body.modal-open{overflow:hidden}
   .employee-summary span{font-size:.56rem}
   .employee-summary strong{font-size:1.45rem}
 }
+
+
+/* =========================================================
+   D.R.I.V.E. v1.1 – MOBILE FIX ALL MODULES
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  /* Jede Seite wirklich auf Handybreite begrenzen */
+  #dashboard,
+  #employees,
+  #inventory,
+  #production,
+  #purchases,
+  #sales,
+  #cash,
+  #commissions,
+  #journal,
+  #settings{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    overflow-x:hidden;
+  }
+
+  #dashboard *,
+  #employees *,
+  #inventory *,
+  #production *,
+  #purchases *,
+  #sales *,
+  #cash *,
+  #commissions *,
+  #journal *,
+  #settings *{
+    box-sizing:border-box;
+  }
+
+  /* Alle Modul-Kopfbereiche */
+  #employees .panel-heading,
+  #inventory .inventory-header,
+  #production .production-header,
+  #purchases .production-header,
+  #sales .production-header,
+  #cash .production-header,
+  #commissions .production-header,
+  #journal .production-header,
+  #settings .production-header{
+    width:100%;
+    max-width:100%;
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    gap:12px !important;
+  }
+
+  #employees .panel-heading > *,
+  #inventory .inventory-header > *,
+  #production .production-header > *,
+  #purchases .production-header > *,
+  #sales .production-header > *,
+  #cash .production-header > *,
+  #commissions .production-header > *,
+  #journal .production-header > *,
+  #settings .production-header > *{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+
+  /* Überschriften */
+  #employees h2,
+  #inventory h2,
+  #production h2,
+  #purchases h2,
+  #sales h2,
+  #cash h2,
+  #commissions h2,
+  #journal h2,
+  #settings h2{
+    font-size:2rem !important;
+    line-height:1.05 !important;
+    overflow-wrap:anywhere;
+  }
+
+  #employees h3,
+  #inventory h3,
+  #production h3,
+  #purchases h3,
+  #sales h3,
+  #cash h3,
+  #commissions h3,
+  #journal h3,
+  #settings h3{
+    font-size:1.45rem !important;
+    line-height:1.1 !important;
+    overflow-wrap:anywhere;
+  }
+
+  /* Alle Aktionsleisten */
+  .inventory-header-actions,
+  .production-filter-group,
+  .employee-toolbar,
+  .inventory-filters{
+    width:100%;
+    max-width:100%;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:8px !important;
+  }
+
+  .inventory-header-actions button,
+  .production-filter-group input,
+  .production-filter-group select,
+  .employee-toolbar input,
+  .employee-toolbar select,
+  .inventory-filters input,
+  .inventory-filters select{
+    width:100% !important;
+    max-width:100% !important;
+  }
+
+  /* Tabs im Lager umbrechen statt überlaufen */
+  .inventory-tabs{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:7px !important;
+  }
+
+  .inventory-tab{
+    width:100% !important;
+    min-width:0 !important;
+    font-size:.82rem !important;
+    white-space:normal !important;
+  }
+
+  /* Alle großen Grids auf eine Spalte */
+  .inventory-grid,
+  .production-layout,
+  .purchase-layout,
+  .sales-layout,
+  .cash-layout,
+  .commission-layout,
+  .settings-layout,
+  .supplier-manager-grid,
+  .customer-manager-grid,
+  .purchase-form-grid,
+  .sales-form-grid{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+
+  /* Kennzahlen auf allen Modulseiten */
+  .metrics,
+  .production-metrics,
+  .purchase-stats{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+    width:100%;
+    max-width:100%;
+  }
+
+  .metric-card,
+  .stat-card{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+
+  .metric-card strong,
+  .stat-card strong{
+    font-size:1.9rem !important;
+    line-height:1.05 !important;
+  }
+
+  /* Tabellen: horizontal innerhalb des Panels scrollen */
+  .employee-table-wrap{
+    width:100% !important;
+    max-width:100% !important;
+    overflow-x:auto !important;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    border-radius:0;
+  }
+
+  .employee-table{
+    width:max-content !important;
+    min-width:720px !important;
+  }
+
+  #inventory .employee-table{min-width:760px !important}
+  #production .employee-table{min-width:900px !important}
+  #purchases .employee-table{min-width:980px !important}
+  #sales .employee-table{min-width:980px !important}
+  #cash .employee-table{min-width:900px !important}
+  #commissions .employee-table{min-width:900px !important}
+  #settings .employee-table{min-width:620px !important}
+
+  /* Formulare überall lesbar und volle Breite */
+  form,
+  form label,
+  .supplier-form-area,
+  .customer-form-area{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+
+  form input,
+  form select,
+  form textarea{
+    width:100% !important;
+    max-width:100% !important;
+  }
+
+  .supplier-select-row{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:8px !important;
+  }
+
+  .supplier-select-row select,
+  .supplier-select-row button{
+    width:100% !important;
+  }
+
+  /* Vorschau-/Berechnungsfelder */
+  .purchase-preview,
+  .sales-preview,
+  .production-calculation{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:8px !important;
+    width:100%;
+  }
+
+  /* Rollen / Berechtigungen */
+  .role-card-list,
+  .permission-list{
+    grid-template-columns:1fr !important;
+  }
+
+  .role-card,
+  .permission-group,
+  .permission-row{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+
+  .permission-row{
+    align-items:center;
+  }
+
+  /* Journal */
+  .journal-entry-card{
+    grid-template-columns:1fr !important;
+    width:100%;
+    gap:8px !important;
+  }
+
+  .journal-entry-time,
+  .journal-entry-main,
+  .journal-entry-amount{
+    width:100%;
+    max-width:100%;
+  }
+
+  .journal-entry-amount{
+    justify-self:start !important;
+  }
+
+  /* Modale für alle Module */
+  .drive-modal{
+    align-items:flex-start !important;
+    overflow-y:auto !important;
+  }
+
+  .drive-modal-card{
+    width:calc(100vw - 14px) !important;
+    max-width:calc(100vw - 14px) !important;
+    min-width:0 !important;
+    max-height:none !important;
+    margin:7px auto !important;
+  }
+
+  /* Texte generell größer */
+  #employees,
+  #inventory,
+  #production,
+  #purchases,
+  #sales,
+  #cash,
+  #commissions,
+  #journal,
+  #settings{
+    font-size:.96rem;
+  }
+
+  #employees p,
+  #inventory p,
+  #production p,
+  #purchases p,
+  #sales p,
+  #cash p,
+  #commissions p,
+  #journal p,
+  #settings p{
+    font-size:.94rem !important;
+    line-height:1.5 !important;
+  }
+
+  /* Buttons überall handytauglich */
+  #employees button,
+  #inventory button,
+  #production button,
+  #purchases button,
+  #sales button,
+  #cash button,
+  #commissions button,
+  #journal button,
+  #settings button{
+    min-height:42px;
+  }
+}
+
