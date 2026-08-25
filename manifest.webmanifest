@@ -1,0 +1,16 @@
+{
+  "name": "D.R.I.V.E. – Donnerfaust Raucherei Inventory & Verwaltung Engine",
+  "short_name": "D.R.I.V.E.",
+  "description": "Donnerfaust Raucherei Inventory & Verwaltung Engine",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4efe6",
+  "theme_color": "#3b2718",
+  "orientation": "any",
+  "icons": [
+    {"src": "app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+  ]
+}
