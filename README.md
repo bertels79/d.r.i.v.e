@@ -340,3 +340,8 @@ v1.1 verbindet die bisherige Browser-App mit der zentralen Supabase-Datenbank.
 Im Frontend befindet sich ausschließlich der Supabase Publishable Key. Kein Secret Key und kein Service-Role-Key wird verwendet.
 
 Da D.R.I.V.E. bewusst ohne Benutzeranmeldung betrieben wird, erlauben die für v1.1 angelegten RLS-Regeln dem anonymen Client Lesen und Schreiben. Die Webadresse sollte deshalb nur an die vorgesehenen Nutzer weitergegeben werden.
+
+
+## Mobile-Fix
+
+Smartphone-Layout überarbeitet: Kopfzeilen, Panels, Schriftgrößen, Formulare, Modale und horizontale Tabellenüberläufe sind für kleine Displays angepasst.
