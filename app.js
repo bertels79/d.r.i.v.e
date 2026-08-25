@@ -2377,7 +2377,7 @@ saleForm.addEventListener("submit", event => {
     });
   }
 
-  saveInventory();
+  saveInventoryData();
   saveSales();
   saveCashData();
   renderStock();
@@ -3470,4 +3470,726 @@ function applyCurrentUserPermissions() {
 
 renderSettingsAll();
 applyCurrentUserPermissions();
+
+
+
+/* =========================================================
+   SUPABASE – v1.1
+   Zentrale Datenspeicherung ohne zusätzlichen App-Login.
+   Der Publishable Key ist für Browser-Clients vorgesehen.
+   ========================================================= */
+
+const DRIVE_SB = {
+  url: String(window.DRIVE_CONFIG?.supabase?.url || "").replace(/\/+$/, ""),
+  key: String(
+    window.DRIVE_CONFIG?.supabase?.publishableKey ||
+    window.DRIVE_CONFIG?.supabase?.anonKey ||
+    ""
+  ),
+  ready: false,
+  applyingRemote: false,
+  syncing: false,
+  syncQueue: Promise.resolve(),
+  lastPullAt: 0
+};
+
+function setSupabaseStatus(text, state = "") {
+  const element = document.getElementById("supabaseSyncStatus");
+  if (!element) return;
+  element.textContent = text;
+  element.dataset.state = state;
+}
+
+function sbHeaders(extra = {}) {
+  return {
+    "apikey": DRIVE_SB.key,
+    "Content-Type": "application/json",
+    ...extra
+  };
+}
+
+async function sbRequest(table, options = {}) {
+  const {
+    method = "GET",
+    query = "select=*",
+    body,
+    prefer = ""
+  } = options;
+
+  if (!DRIVE_SB.url || !DRIVE_SB.key) {
+    throw new Error("Supabase-Konfiguration fehlt.");
+  }
+
+  const suffix = query ? `?${query}` : "";
+  const response = await fetch(`${DRIVE_SB.url}/rest/v1/${table}${suffix}`, {
+    method,
+    headers: sbHeaders(prefer ? {"Prefer": prefer} : {}),
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`${table}: ${response.status} ${message}`);
+  }
+
+  if (response.status === 204) return null;
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function sbGet(table) {
+  return await sbRequest(table, {query:"select=*"});
+}
+
+async function sbUpsert(table, rows, conflictColumn = "id") {
+  if (!rows.length) return;
+  await sbRequest(table, {
+    method:"POST",
+    query:`on_conflict=${encodeURIComponent(conflictColumn)}`,
+    body:rows,
+    prefer:"resolution=merge-duplicates,return=minimal"
+  });
+}
+
+async function sbDeleteMissing(table, localIds, conflictColumn = "id") {
+  const remote = await sbRequest(table, {query:`select=${encodeURIComponent(conflictColumn)}`}) || [];
+  const keep = new Set(localIds.map(String));
+
+  for (const row of remote) {
+    const value = row[conflictColumn];
+    if (keep.has(String(value))) continue;
+    await sbRequest(table, {
+      method:"DELETE",
+      query:`${encodeURIComponent(conflictColumn)}=eq.${encodeURIComponent(value)}`
+    });
+  }
+}
+
+async function sbReplace(table, rows, conflictColumn = "id") {
+  await sbUpsert(table, rows, conflictColumn);
+  await sbDeleteMissing(table, rows.map(row => row[conflictColumn]), conflictColumn);
+}
+
+/* ---------- Umwandlung App -> Supabase ---------- */
+
+function employeeToRow(x) {
+  return {
+    id:x.id, first_name:x.firstName || "", last_name:x.lastName || "",
+    start_date:x.startDate || null, commission_rate:Number(x.commissionRate || 0),
+    note:x.note || "", active:x.active !== false,
+    terminated_at:x.terminatedAt || null,
+    created_at:x.createdAt || undefined, updated_at:x.updatedAt || undefined
+  };
+}
+
+function materialToRow(x) {
+  return {
+    id:x.id, name:x.name || "", category:x.category || "Rohstoff",
+    unit:x.unit || "Stück", purchase_cost:x.purchaseCost || {type:"money",amount:0},
+    stock:Number(x.stock || 0), min_stock:Number(x.minStock || 0),
+    active:x.active !== false, created_at:x.createdAt || undefined,
+    updated_at:x.updatedAt || undefined
+  };
+}
+
+function productToRow(x) {
+  return {
+    id:x.id, name:x.name || "", category:x.category || "Produkt",
+    sale_price:Number(x.salePrice || 0), purchase_price:Number(x.purchasePrice || 0),
+    stock:Number(x.stock || 0), min_stock:Number(x.minStock || 0),
+    recipe:Array.isArray(x.recipe) ? x.recipe : [], active:x.active !== false,
+    created_at:x.createdAt || undefined, updated_at:x.updatedAt || undefined
+  };
+}
+
+function adjustmentToRow(x) {
+  return {
+    id:x.id, item_id:x.itemId || "", item_name:x.itemName || "",
+    old_stock:Number(x.oldStock || 0), new_stock:Number(x.newStock || 0),
+    reason:x.reason || "", created_at:x.createdAt || undefined
+  };
+}
+
+function productionToRow(x) {
+  return {
+    id:x.id, employee_id:x.employeeId || null, employee_name:x.employeeName || "",
+    product_id:x.productId || null, product_name:x.productName || "",
+    quantity:Number(x.quantity || 0), unit_price:Number(x.unitPrice || 0),
+    total_value:Number(x.totalValue || 0), production_profit:Number(x.productionProfit || 0),
+    commission_rate:Number(x.commissionRate || 0),
+    commission_value:Number(x.commissionValue || 0),
+    ingredients:Array.isArray(x.ingredients) ? x.ingredients : [],
+    product_old_stock:Number(x.productOldStock || 0),
+    product_new_stock:Number(x.productNewStock || 0),
+    created_at:x.createdAt || undefined
+  };
+}
+
+function supplierToRow(x) {
+  return {
+    id:x.id, name:x.name || "", contact:x.contact || "", telegram:x.telegram || "",
+    note:x.note || "", active:x.active !== false,
+    created_at:x.createdAt || undefined, updated_at:x.updatedAt || undefined
+  };
+}
+
+function purchaseToRow(x) {
+  return {
+    id:x.id, employee_id:x.employeeId || null, employee_name:x.employeeName || "",
+    supplier_id:x.supplierId || null,
+    supplier_name:typeof x.supplier === "object" ? (x.supplier?.name || "") : (x.supplier || x.supplierName || ""),
+    supplier_contact:x.supplierContact || "", supplier_telegram:x.supplierTelegram || "",
+    item_id:x.itemId || null, item_name:x.itemName || "", item_type:x.itemType || "",
+    unit:x.unit || "Stück", quantity:Number(x.quantity || 0),
+    old_stock:Number(x.oldStock || 0), new_stock:Number(x.newStock || 0),
+    note:x.note || "", payment_type:x.paymentType || "money",
+    payment_status:x.paymentStatus || "paid",
+    unit_price:x.unitPrice === undefined ? null : Number(x.unitPrice || 0),
+    total_cost:Number(x.totalCost || 0), due_date:x.dueDate || null,
+    paid_at:x.paidAt || null, resource_payment:x.resourcePayment || null,
+    created_at:x.createdAt || undefined
+  };
+}
+
+function customerToRow(x) {
+  return {
+    id:x.id, name:x.name || "", contact:x.contact || "", telegram:x.telegram || "",
+    note:x.note || "", active:x.active !== false,
+    created_at:x.createdAt || undefined, updated_at:x.updatedAt || undefined
+  };
+}
+
+function saleToRow(x) {
+  return {
+    id:x.id, employee_id:x.employeeId || null, employee_name:x.employeeName || "",
+    customer_id:x.customerId || null, customer_name:x.customer || x.customerName || "",
+    customer_contact:x.customerContact || "", customer_telegram:x.customerTelegram || "",
+    product_id:x.productId || null, product_name:x.productName || "",
+    quantity:Number(x.quantity || 0), unit_price:Number(x.unitPrice || 0),
+    total_revenue:Number(x.totalRevenue || 0),
+    payment_status:x.paymentStatus || "paid", due_date:x.dueDate || null,
+    note:x.note || "", paid_at:x.paidAt || null, created_at:x.createdAt || undefined
+  };
+}
+
+function cashMovementToRow(x) {
+  return {
+    id:x.id, type:x.type || "manual", direction:x.direction,
+    amount:Number(x.amount || 0), reference_id:x.referenceId || null,
+    description:x.description || "", note:x.note || "",
+    created_at:x.createdAt || undefined
+  };
+}
+
+function commissionToRow(x) {
+  return {
+    id:x.id, type:x.type || (x.productionId ? "production" : "sale"),
+    employee_id:x.employeeId || null, employee_name:x.employeeName || "",
+    sale_id:x.saleId || null, production_id:x.productionId || null,
+    sale_revenue:x.saleRevenue === undefined ? null : Number(x.saleRevenue || 0),
+    rate:x.rate === undefined ? (x.commissionRate === undefined ? null : Number(x.commissionRate || 0)) : Number(x.rate || 0),
+    amount:Number(x.amount || 0), status:x.status || "open",
+    paid_at:x.paidAt || null, created_at:x.createdAt || undefined
+  };
+}
+
+function roleToRow(x) {
+  return {
+    id:x.id, name:x.name || "", description:x.description || "",
+    locked:Boolean(x.locked), permissions:x.permissions || {},
+    created_at:x.createdAt || undefined, updated_at:x.updatedAt || undefined
+  };
+}
+
+/* ---------- Umwandlung Supabase -> App ---------- */
+
+function employeeFromRow(x) {
+  return {
+    id:x.id, firstName:x.first_name, lastName:x.last_name,
+    startDate:x.start_date || "", commissionRate:Number(x.commission_rate || 0),
+    note:x.note || "", active:x.active !== false,
+    terminatedAt:x.terminated_at || "", createdAt:x.created_at, updatedAt:x.updated_at
+  };
+}
+
+function materialFromRow(x) {
+  return {
+    id:x.id, name:x.name, category:x.category, unit:x.unit,
+    purchaseCost:x.purchase_cost || {type:"money",amount:0},
+    stock:Number(x.stock || 0), minStock:Number(x.min_stock || 0),
+    active:x.active !== false, createdAt:x.created_at, updatedAt:x.updated_at
+  };
+}
+
+function productFromRow(x) {
+  return {
+    id:x.id, name:x.name, category:x.category,
+    salePrice:Number(x.sale_price || 0), purchasePrice:Number(x.purchase_price || 0),
+    stock:Number(x.stock || 0), minStock:Number(x.min_stock || 0),
+    recipe:Array.isArray(x.recipe) ? x.recipe : [], active:x.active !== false,
+    createdAt:x.created_at, updatedAt:x.updated_at
+  };
+}
+
+function adjustmentFromRow(x) {
+  return {
+    id:x.id, itemId:x.item_id, itemName:x.item_name,
+    oldStock:Number(x.old_stock || 0), newStock:Number(x.new_stock || 0),
+    reason:x.reason || "", createdAt:x.created_at
+  };
+}
+
+function productionFromRow(x) {
+  return {
+    id:x.id, employeeId:x.employee_id || "", employeeName:x.employee_name || "",
+    productId:x.product_id || "", productName:x.product_name || "",
+    quantity:Number(x.quantity || 0), unitPrice:Number(x.unit_price || 0),
+    totalValue:Number(x.total_value || 0), productionProfit:Number(x.production_profit || 0),
+    commissionRate:Number(x.commission_rate || 0), commissionValue:Number(x.commission_value || 0),
+    ingredients:Array.isArray(x.ingredients) ? x.ingredients : [],
+    productOldStock:Number(x.product_old_stock || 0),
+    productNewStock:Number(x.product_new_stock || 0),
+    createdAt:x.created_at
+  };
+}
+
+function supplierFromRow(x) {
+  return {
+    id:x.id, name:x.name, contact:x.contact || "", telegram:x.telegram || "",
+    note:x.note || "", active:x.active !== false,
+    createdAt:x.created_at, updatedAt:x.updated_at
+  };
+}
+
+function purchaseFromRow(x) {
+  return {
+    id:x.id, employeeId:x.employee_id || "", employeeName:x.employee_name || "",
+    supplierId:x.supplier_id || "", supplier:x.supplier_name || "",
+    supplierContact:x.supplier_contact || "", supplierTelegram:x.supplier_telegram || "",
+    itemId:x.item_id || "", itemName:x.item_name || "", itemType:x.item_type || "",
+    unit:x.unit || "Stück", quantity:Number(x.quantity || 0),
+    oldStock:Number(x.old_stock || 0), newStock:Number(x.new_stock || 0),
+    note:x.note || "", paymentType:x.payment_type || "money",
+    paymentStatus:x.payment_status || "paid",
+    unitPrice:x.unit_price === null ? undefined : Number(x.unit_price || 0),
+    totalCost:Number(x.total_cost || 0), dueDate:x.due_date || "",
+    paidAt:x.paid_at || "", resourcePayment:x.resource_payment || null,
+    createdAt:x.created_at
+  };
+}
+
+function customerFromRow(x) {
+  return {
+    id:x.id, name:x.name, contact:x.contact || "", telegram:x.telegram || "",
+    note:x.note || "", active:x.active !== false,
+    createdAt:x.created_at, updatedAt:x.updated_at
+  };
+}
+
+function saleFromRow(x) {
+  return {
+    id:x.id, employeeId:x.employee_id || "", employeeName:x.employee_name || "",
+    customerId:x.customer_id || "", customer:x.customer_name || "",
+    customerContact:x.customer_contact || "", customerTelegram:x.customer_telegram || "",
+    productId:x.product_id || "", productName:x.product_name || "",
+    quantity:Number(x.quantity || 0), unitPrice:Number(x.unit_price || 0),
+    totalRevenue:Number(x.total_revenue || 0), paymentStatus:x.payment_status || "paid",
+    dueDate:x.due_date || "", note:x.note || "", paidAt:x.paid_at || "",
+    createdAt:x.created_at
+  };
+}
+
+function cashMovementFromRow(x) {
+  return {
+    id:x.id, type:x.type, direction:x.direction, amount:Number(x.amount || 0),
+    referenceId:x.reference_id || "", description:x.description || "",
+    note:x.note || "", createdAt:x.created_at
+  };
+}
+
+function commissionFromRow(x) {
+  return {
+    id:x.id, type:x.type || "", employeeId:x.employee_id || "",
+    employeeName:x.employee_name || "", saleId:x.sale_id || "",
+    productionId:x.production_id || "",
+    saleRevenue:x.sale_revenue === null ? undefined : Number(x.sale_revenue || 0),
+    rate:x.rate === null ? undefined : Number(x.rate || 0),
+    amount:Number(x.amount || 0), status:x.status || "open",
+    paidAt:x.paid_at || "", createdAt:x.created_at
+  };
+}
+
+function roleFromRow(x) {
+  return {
+    id:x.id, name:x.name, description:x.description || "",
+    locked:Boolean(x.locked), permissions:x.permissions || {},
+    createdAt:x.created_at, updatedAt:x.updated_at
+  };
+}
+
+/* ---------- Lokale Daten -> Datenbank ---------- */
+
+async function syncEmployeesToSupabase() {
+  await sbReplace("employees", employees.map(employeeToRow));
+}
+
+async function syncInventoryToSupabase() {
+  await sbReplace("materials", inventoryData.materials.map(materialToRow));
+  await sbReplace("products", inventoryData.products.map(productToRow));
+  await sbReplace("inventory_adjustments", inventoryData.adjustments.map(adjustmentToRow));
+}
+
+async function syncProductionsToSupabase() {
+  await sbReplace("productions", productions.map(productionToRow));
+}
+
+async function syncCommissionLedgerToSupabase() {
+  await sbReplace("commission_ledger", commissionLedger.map(commissionToRow));
+}
+
+async function syncSuppliersToSupabase() {
+  await sbReplace("suppliers", suppliers.map(supplierToRow));
+}
+
+async function syncPurchasesToSupabase() {
+  await sbReplace("purchases", purchases.map(purchaseToRow));
+}
+
+async function syncCashToSupabase() {
+  await sbUpsert("cash_settings", [{
+    id:1,
+    opening_balance:Number(cashData.openingBalance || 0),
+    opening_balance_updated_at:cashData.openingBalanceUpdatedAt || null,
+    updated_at:new Date().toISOString()
+  }]);
+  await sbReplace("cash_movements", cashData.movements.map(cashMovementToRow));
+}
+
+async function syncCustomersToSupabase() {
+  await sbReplace("customers", customers.map(customerToRow));
+}
+
+async function syncSalesToSupabase() {
+  await sbReplace("sales", sales.map(saleToRow));
+}
+
+async function syncCommissionRatesToSupabase() {
+  const rows = Object.entries(commissionRates).map(([employeeId, rate]) => ({
+    employee_id:employeeId,
+    rate:Number(rate || 0),
+    updated_at:new Date().toISOString()
+  }));
+  await sbReplace("commission_rates", rows, "employee_id");
+}
+
+async function syncRolesToSupabase() {
+  await sbReplace("roles", roles.map(roleToRow));
+}
+
+async function syncEmployeeRolesToSupabase() {
+  const rows = Object.entries(employeeRoles).map(([employeeId, roleId]) => ({
+    employee_id:employeeId,
+    role_id:roleId,
+    updated_at:new Date().toISOString()
+  }));
+  await sbReplace("employee_roles", rows, "employee_id");
+}
+
+function queueSupabaseSync(label, work) {
+  if (!DRIVE_SB.ready || DRIVE_SB.applyingRemote) return;
+
+  DRIVE_SB.syncQueue = DRIVE_SB.syncQueue
+    .then(async () => {
+      DRIVE_SB.syncing = true;
+      setSupabaseStatus("Speichert …", "working");
+      await work();
+      setSupabaseStatus("Supabase verbunden", "ok");
+    })
+    .catch(error => {
+      console.error(`Supabase-Sync (${label})`, error);
+      setSupabaseStatus("Datenbankfehler", "error");
+    })
+    .finally(() => {
+      DRIVE_SB.syncing = false;
+    });
+}
+
+/* Bestehende Speicherfunktionen erweitern, ohne die UI-Logik umzubauen. */
+
+const driveLocalSaveEmployees = saveEmployees;
+saveEmployees = function() {
+  driveLocalSaveEmployees();
+  queueSupabaseSync("employees", syncEmployeesToSupabase);
+};
+
+const driveLocalSaveInventoryData = saveInventoryData;
+saveInventoryData = function() {
+  driveLocalSaveInventoryData();
+  queueSupabaseSync("inventory", syncInventoryToSupabase);
+};
+
+const driveLocalSaveProductions = saveProductions;
+saveProductions = function() {
+  driveLocalSaveProductions();
+  queueSupabaseSync("productions", syncProductionsToSupabase);
+};
+
+const driveLocalSaveCommissionLedger = saveCommissionLedger;
+saveCommissionLedger = function() {
+  driveLocalSaveCommissionLedger();
+  queueSupabaseSync("commission_ledger", syncCommissionLedgerToSupabase);
+};
+
+const driveLocalSaveSuppliers = saveSuppliers;
+saveSuppliers = function() {
+  driveLocalSaveSuppliers();
+  queueSupabaseSync("suppliers", syncSuppliersToSupabase);
+};
+
+const driveLocalSavePurchases = savePurchases;
+savePurchases = function() {
+  driveLocalSavePurchases();
+  queueSupabaseSync("purchases", syncPurchasesToSupabase);
+};
+
+const driveLocalSaveCashData = saveCashData;
+saveCashData = function() {
+  driveLocalSaveCashData();
+  queueSupabaseSync("cash", syncCashToSupabase);
+};
+
+const driveLocalSaveCustomers = saveCustomers;
+saveCustomers = function() {
+  driveLocalSaveCustomers();
+  queueSupabaseSync("customers", syncCustomersToSupabase);
+};
+
+const driveLocalSaveSales = saveSales;
+saveSales = function() {
+  driveLocalSaveSales();
+  queueSupabaseSync("sales", syncSalesToSupabase);
+};
+
+const driveLocalSaveCommissionRates = saveCommissionRates;
+saveCommissionRates = function() {
+  driveLocalSaveCommissionRates();
+  queueSupabaseSync("commission_rates", syncCommissionRatesToSupabase);
+};
+
+const driveLocalSaveRoles = saveRoles;
+saveRoles = function() {
+  driveLocalSaveRoles();
+  queueSupabaseSync("roles", syncRolesToSupabase);
+};
+
+const driveLocalSaveEmployeeRoles = saveEmployeeRoles;
+saveEmployeeRoles = function() {
+  driveLocalSaveEmployeeRoles();
+  queueSupabaseSync("employee_roles", syncEmployeeRolesToSupabase);
+};
+
+/* ---------- Datenbank -> lokale App ---------- */
+
+function storeRemoteLocally() {
+  localStorage.setItem(EMPLOYEE_STORAGE_KEY, JSON.stringify(employees));
+  localStorage.setItem(DRIVE_INVENTORY_KEY, JSON.stringify(inventoryData));
+  localStorage.setItem(DRIVE_PRODUCTION_KEY, JSON.stringify(productions));
+  localStorage.setItem(DRIVE_COMMISSION_LEDGER_KEY, JSON.stringify(commissionLedger));
+  localStorage.setItem(DRIVE_SUPPLIERS_KEY, JSON.stringify(suppliers));
+  localStorage.setItem(DRIVE_PURCHASE_KEY, JSON.stringify(purchases));
+  localStorage.setItem(DRIVE_CASH_KEY, JSON.stringify(cashData));
+  localStorage.setItem(DRIVE_CUSTOMERS_KEY, JSON.stringify(customers));
+  localStorage.setItem(DRIVE_SALES_KEY, JSON.stringify(sales));
+  localStorage.setItem(DRIVE_COMMISSION_RATES_KEY, JSON.stringify(commissionRates));
+  localStorage.setItem(DRIVE_ROLES_KEY, JSON.stringify(roles));
+  localStorage.setItem(DRIVE_EMPLOYEE_ROLES_KEY, JSON.stringify(employeeRoles));
+}
+
+function rerenderAfterRemoteLoad() {
+  renderEmployees();
+  renderAllInventory();
+  refreshProductionSelectors();
+  renderProductionHistory();
+  renderProductionMetrics();
+  renderSuppliers();
+  refreshPurchaseSelectors();
+  refreshSupplierSelect();
+  renderPurchaseHistory();
+  renderPurchaseMetrics();
+  renderCustomers();
+  refreshSaleSelectors();
+  renderSalesHistory();
+  renderSaleMetrics();
+  renderCashAll();
+  renderCommissionsAll();
+  renderSettingsAll();
+  renderJournal();
+  renderDashboardLive();
+}
+
+async function readAllSupabaseData() {
+  const [
+    employeeRows, materialRows, productRows, adjustmentRows,
+    productionRows, supplierRows, purchaseRows, customerRows,
+    saleRows, cashSettingRows, cashMovementRows, commissionRows,
+    commissionRateRows, roleRows, employeeRoleRows
+  ] = await Promise.all([
+    sbGet("employees"), sbGet("materials"), sbGet("products"), sbGet("inventory_adjustments"),
+    sbGet("productions"), sbGet("suppliers"), sbGet("purchases"), sbGet("customers"),
+    sbGet("sales"), sbGet("cash_settings"), sbGet("cash_movements"), sbGet("commission_ledger"),
+    sbGet("commission_rates"), sbGet("roles"), sbGet("employee_roles")
+  ]);
+
+  return {
+    employeeRows:employeeRows || [],
+    materialRows:materialRows || [],
+    productRows:productRows || [],
+    adjustmentRows:adjustmentRows || [],
+    productionRows:productionRows || [],
+    supplierRows:supplierRows || [],
+    purchaseRows:purchaseRows || [],
+    customerRows:customerRows || [],
+    saleRows:saleRows || [],
+    cashSettingRows:cashSettingRows || [],
+    cashMovementRows:cashMovementRows || [],
+    commissionRows:commissionRows || [],
+    commissionRateRows:commissionRateRows || [],
+    roleRows:roleRows || [],
+    employeeRoleRows:employeeRoleRows || []
+  };
+}
+
+async function bootstrapSupabaseFromLocal(remote) {
+  /* Nur wenn eine Tabelle noch leer ist, werden die vorhandenen lokalen Daten
+     einmalig als Startbestand hochgeladen. Danach ist Supabase maßgeblich. */
+
+  if (!remote.employeeRows.length && employees.length) await syncEmployeesToSupabase();
+  if (!remote.materialRows.length && inventoryData.materials.length) {
+    await sbReplace("materials", inventoryData.materials.map(materialToRow));
+  }
+  if (!remote.productRows.length && inventoryData.products.length) {
+    await sbReplace("products", inventoryData.products.map(productToRow));
+  }
+  if (!remote.adjustmentRows.length && inventoryData.adjustments.length) {
+    await sbReplace("inventory_adjustments", inventoryData.adjustments.map(adjustmentToRow));
+  }
+  if (!remote.productionRows.length && productions.length) await syncProductionsToSupabase();
+  if (!remote.supplierRows.length && suppliers.length) await syncSuppliersToSupabase();
+  if (!remote.purchaseRows.length && purchases.length) await syncPurchasesToSupabase();
+  if (!remote.customerRows.length && customers.length) await syncCustomersToSupabase();
+  if (!remote.saleRows.length && sales.length) await syncSalesToSupabase();
+  if (!remote.cashMovementRows.length && cashData.movements.length) {
+    await syncCashToSupabase();
+  } else if (
+    remote.cashSettingRows.length &&
+    Number(remote.cashSettingRows[0].opening_balance || 0) === 0 &&
+    Number(cashData.openingBalance || 0) !== 0
+  ) {
+    await syncCashToSupabase();
+  }
+  if (!remote.commissionRows.length && commissionLedger.length) await syncCommissionLedgerToSupabase();
+  if (!remote.commissionRateRows.length && Object.keys(commissionRates).length) await syncCommissionRatesToSupabase();
+
+  /* SQL legt bereits Geschäftsinhaber an. Lokale zusätzliche Rollen trotzdem übernehmen. */
+  const remoteRoleIds = new Set(remote.roleRows.map(row => row.id));
+  const missingLocalRoles = roles.filter(role => !remoteRoleIds.has(role.id));
+  if (missingLocalRoles.length) await sbUpsert("roles", missingLocalRoles.map(roleToRow));
+
+  if (!remote.employeeRoleRows.length && Object.keys(employeeRoles).length) {
+    await syncEmployeeRolesToSupabase();
+  }
+}
+
+async function applySupabaseData(remote) {
+  DRIVE_SB.applyingRemote = true;
+  try {
+    employees = remote.employeeRows.map(employeeFromRow);
+    inventoryData = {
+      materials:remote.materialRows.map(materialFromRow),
+      products:remote.productRows.map(productFromRow),
+      adjustments:remote.adjustmentRows.map(adjustmentFromRow)
+    };
+    productions = remote.productionRows.map(productionFromRow);
+    suppliers = remote.supplierRows.map(supplierFromRow);
+    purchases = remote.purchaseRows.map(purchaseFromRow);
+    customers = remote.customerRows.map(customerFromRow);
+    sales = remote.saleRows.map(saleFromRow);
+
+    const setting = remote.cashSettingRows.find(row => Number(row.id) === 1) || remote.cashSettingRows[0];
+    cashData = {
+      openingBalance:Number(setting?.opening_balance || 0),
+      openingBalanceUpdatedAt:setting?.opening_balance_updated_at || "",
+      movements:remote.cashMovementRows.map(cashMovementFromRow)
+    };
+
+    commissionLedger = remote.commissionRows.map(commissionFromRow);
+
+    commissionRates = {};
+    remote.commissionRateRows.forEach(row => {
+      commissionRates[row.employee_id] = Number(row.rate || 0);
+    });
+
+    roles = remote.roleRows.map(roleFromRow);
+
+    employeeRoles = {};
+    remote.employeeRoleRows.forEach(row => {
+      employeeRoles[row.employee_id] = row.role_id;
+    });
+
+    storeRemoteLocally();
+    rerenderAfterRemoteLoad();
+  } finally {
+    DRIVE_SB.applyingRemote = false;
+  }
+}
+
+async function pullSupabaseData({force = false} = {}) {
+  if (!DRIVE_SB.ready || DRIVE_SB.syncing || DRIVE_SB.applyingRemote) return;
+  if (!force && Date.now() - DRIVE_SB.lastPullAt < 5000) return;
+
+  try {
+    const remote = await readAllSupabaseData();
+    DRIVE_SB.lastPullAt = Date.now();
+    await applySupabaseData(remote);
+    setSupabaseStatus("Supabase verbunden", "ok");
+  } catch (error) {
+    console.error("Supabase laden", error);
+    setSupabaseStatus("Datenbankfehler", "error");
+  }
+}
+
+async function initializeDriveSupabase() {
+  if (!DRIVE_SB.url || !DRIVE_SB.key) {
+    setSupabaseStatus("Nur lokal", "error");
+    return;
+  }
+
+  setSupabaseStatus("Datenbank verbindet …", "working");
+
+  try {
+    let remote = await readAllSupabaseData();
+    await bootstrapSupabaseFromLocal(remote);
+
+    /* Nach eventueller Erstübernahme erneut lesen. */
+    remote = await readAllSupabaseData();
+
+    DRIVE_SB.ready = true;
+    await applySupabaseData(remote);
+    DRIVE_SB.lastPullAt = Date.now();
+    setSupabaseStatus("Supabase verbunden", "ok");
+
+    /* Gemeinsame Daten automatisch nachladen.
+       Zusätzlich erfolgt ein Sofort-Refresh, wenn das Browserfenster wieder aktiv wird. */
+    window.setInterval(() => pullSupabaseData(), 10000);
+    window.addEventListener("focus", () => pullSupabaseData({force:true}));
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) pullSupabaseData({force:true});
+    });
+  } catch (error) {
+    console.error("D.R.I.V.E. Supabase Initialisierung", error);
+    setSupabaseStatus("Datenbankfehler – lokale Daten aktiv", "error");
+  }
+}
+
+initializeDriveSupabase();
 

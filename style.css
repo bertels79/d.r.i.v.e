@@ -709,3 +709,21 @@ body.modal-open{overflow:hidden}
 #manageCustomersButton.supplier-manage-button{
   min-height:34px;
 }
+
+
+/* =========================================================
+   SUPABASE STATUS – v1.1
+   ========================================================= */
+.sync-status{
+  display:block;
+  margin-top:3px;
+  font-size:.62rem;
+  font-weight:600;
+  opacity:.78;
+}
+.sync-status[data-state="ok"]{opacity:.9}
+.sync-status[data-state="working"]{font-style:italic}
+.sync-status[data-state="error"]{
+  color:#7b3023;
+  opacity:1;
+}

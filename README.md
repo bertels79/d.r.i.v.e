@@ -1,4 +1,4 @@
-# D.R.I.V.E. v1.0
+# D.R.I.V.E. v1.1
 
 **Donnerfaust Raucherei Inventory & Verwaltung Engine**
 
@@ -320,3 +320,23 @@ Enthalten sind:
 - die gesperrte Systemrolle Geschäftsinhaber erhält bei neuen Berechtigungen automatisch Vollzugriff
 
 Die lokale Test-/Desktopversion speichert weiterhin im Browser. Die vorbereitete Supabase-Konfiguration ist noch nicht verbunden.
+
+
+# D.R.I.V.E. v1.1 – Supabase
+
+v1.1 verbindet die bisherige Browser-App mit der zentralen Supabase-Datenbank.
+
+## Verhalten
+
+- vorhandene lokale Daten werden bei einer noch leeren Supabase-Tabelle als Startbestand übernommen
+- danach werden Mitarbeiter, Lager, Produkte, Produktion, Lieferanten, Einkäufe, Kunden, Verkäufe, Kasse, Provisionen und Rollen zentral gespeichert
+- beim Öffnen der App werden die zentralen Daten geladen
+- alle 10 Sekunden sowie beim erneuten Aktivieren des Browserfensters wird der gemeinsame Stand aktualisiert
+- lokale Browser-Speicherung bleibt als Ausfallsicherung erhalten
+- es gibt keinen zusätzlichen D.R.I.V.E.-Login
+
+## Sicherheit
+
+Im Frontend befindet sich ausschließlich der Supabase Publishable Key. Kein Secret Key und kein Service-Role-Key wird verwendet.
+
+Da D.R.I.V.E. bewusst ohne Benutzeranmeldung betrieben wird, erlauben die für v1.1 angelegten RLS-Regeln dem anonymen Client Lesen und Schreiben. Die Webadresse sollte deshalb nur an die vorgesehenen Nutzer weitergegeben werden.
