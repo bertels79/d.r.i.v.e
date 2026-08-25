@@ -3444,12 +3444,15 @@ document.getElementById("roleForm").addEventListener("submit", event => {
     permissions[box.dataset.permission] = box.checked;
   });
 
+  const now = new Date().toISOString();
   const role = {
     id: existing ? existing.id : makeInventoryId("role"),
     name: document.getElementById("roleName").value.trim(),
     description: document.getElementById("roleDescription").value.trim(),
     locked: existing ? Boolean(existing.locked) : false,
-    permissions
+    permissions,
+    createdAt: existing?.createdAt || now,
+    updatedAt: now
   };
 
   if (!role.name) return;
