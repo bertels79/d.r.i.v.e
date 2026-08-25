@@ -1,3 +1,24 @@
+
+const DRIVE_PAGE_PERMISSIONS = {
+  dashboard:"view_overview",
+  employees:"manage_employees",
+  inventory:"view_inventory",
+  production:"view_production",
+  purchases:"view_purchases",
+  sales:"view_sales",
+  cash:"view_cash",
+  commissions:"view_commissions",
+  journal:"view_journal",
+  settings:"manage_settings"
+};
+
+function driveCanOpenPage(pageName) {
+  if (!window.DRIVE_AUTH_LOGGED_IN) return true;
+  const permission = DRIVE_PAGE_PERMISSIONS[pageName];
+  if (!permission || typeof hasCurrentPermission !== "function") return true;
+  return hasCurrentPermission(permission);
+}
+
 const pages = {
   dashboard: "Übersicht",
   employees: "Mitarbeiter",
@@ -16,6 +37,13 @@ const pageTitle = document.getElementById("pageTitle");
 const menuButton = document.getElementById("menuButton");
 
 function showPage(pageName) {
+  if (!driveCanOpenPage(pageName)) {
+    const fallback = ["dashboard","employees","inventory","production","purchases","sales","cash","commissions","journal","settings"]
+      .find(name => driveCanOpenPage(name));
+    if (fallback && fallback !== pageName) return showPage(fallback);
+    return;
+  }
+
   document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
   document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
 
@@ -107,6 +135,7 @@ const employeeFirstName = document.getElementById("employeeFirstName");
 const employeeLastName = document.getElementById("employeeLastName");
 const employeeStartDate = document.getElementById("employeeStartDate");
 const employeeRoleSelect = document.getElementById("employeeRoleSelect");
+const employeeTempPin = document.getElementById("employeeTempPin");
 const employeeNote = document.getElementById("employeeNote");
 const employeeSearch = document.getElementById("employeeSearch");
 const employeeStatusFilter = document.getElementById("employeeStatusFilter");
@@ -265,6 +294,8 @@ function resetEmployeeForm() {
   employeeId.value = "";
   employeeRoleSelect.innerHTML = `<option value="">Keine Rolle</option>`;
   employeeRoleSelect.value = "";
+  employeeTempPin.value = "";
+  employeeTempPin.required = true;
   employeeStartDate.value = new Date().toISOString().slice(0, 10);
   employeeFormMode.textContent = "Neue Personalakte";
   employeeFormTitle.textContent = "Mitarbeiter anlegen";
@@ -282,6 +313,8 @@ function editEmployee(id) {
   const employeeRoleAssignments = loadEmployeeRolesForEmployeeUi();
   refreshEmployeeRoleOptions(employeeRoleAssignments[employee.id] || "");
   employeeNote.value = employee.note || "";
+  employeeTempPin.value = "";
+  employeeTempPin.required = false;
   employeeFormMode.textContent = "Personalakte bearbeiten";
   employeeFormTitle.textContent = `${employee.firstName} ${employee.lastName}`;
 
@@ -324,7 +357,7 @@ function terminateEmployee(id) {
   if (employeeId.value === id) resetEmployeeForm();
 }
 
-employeeForm.addEventListener("submit", event => {
+employeeForm.addEventListener("submit", async event => {
   event.preventDefault();
 
   const firstName = employeeFirstName.value.trim();
@@ -332,7 +365,14 @@ employeeForm.addEventListener("submit", event => {
 
   if (!firstName || !lastName) return;
 
+  const requestedTempPin = employeeTempPin.value.trim();
   const existingId = employeeId.value;
+
+  if (!existingId && requestedTempPin.length < 4) {
+    window.alert("Für einen neuen Mitarbeiter bitte eine vorläufige PIN mit mindestens 4 Zeichen vergeben.");
+    employeeTempPin.focus();
+    return;
+  }
   const data = {
     firstName,
     lastName,
@@ -376,6 +416,21 @@ employeeForm.addEventListener("submit", event => {
       if (typeof saveEmployeeRoles === "function") saveEmployeeRoles();
     }
     if (typeof renderSettingsAll === "function") renderSettingsAll();
+
+    if (requestedTempPin) {
+      try {
+        if (typeof DRIVE_SB !== "undefined" && DRIVE_SB.ready) {
+          await DRIVE_SB.syncQueue;
+        }
+        if (typeof driveSetEmployeeTempPin !== "function") {
+          throw new Error("Anmeldefunktion ist noch nicht bereit.");
+        }
+        await driveSetEmployeeTempPin(savedEmployee.id, requestedTempPin);
+      } catch (error) {
+        console.error("Vorläufige PIN", error);
+        window.alert("Der Mitarbeiter wurde gespeichert, aber die vorläufige PIN konnte nicht gesetzt werden: " + error.message);
+      }
+    }
   }
 
   resetEmployeeForm();
@@ -3430,6 +3485,7 @@ function hasCurrentPermission(permissionId) {
 
 function applyCurrentUserPermissions() {
   const rules = [
+    ["[data-page='dashboard']", "view_overview"],
     ["[data-page='employees']", "manage_employees"],
     ["[data-page='inventory']", "view_inventory"],
     ["[data-page='production']", "view_production"],
@@ -4229,4 +4285,320 @@ driveMobileTableObserver.observe(document.getElementById("appContent") || docume
   childList:true,
   subtree:true
 });
+
+
+
+/* =========================================================
+   MITARBEITER-ANMELDUNG – v1.2
+   ========================================================= */
+
+const DRIVE_AUTH_SESSION_KEY = "drive_auth_session_v12";
+let driveAuthSessionToken = localStorage.getItem(DRIVE_AUTH_SESSION_KEY) || "";
+let drivePendingOldPassword = "";
+let drivePendingEmployeeId = "";
+
+const authScreen = document.getElementById("authScreen");
+const loginForm = document.getElementById("loginForm");
+const loginEmployee = document.getElementById("loginEmployee");
+const loginPassword = document.getElementById("loginPassword");
+const passwordChangeForm = document.getElementById("passwordChangeForm");
+const newPassword = document.getElementById("newPassword");
+const newPasswordRepeat = document.getElementById("newPasswordRepeat");
+const initialSetupForm = document.getElementById("initialSetupForm");
+const setupEmployee = document.getElementById("setupEmployee");
+const setupPassword = document.getElementById("setupPassword");
+const setupPasswordRepeat = document.getElementById("setupPasswordRepeat");
+const authMessage = document.getElementById("authMessage");
+const authTitle = document.getElementById("authTitle");
+const authIntro = document.getElementById("authIntro");
+const currentUserLabel = document.getElementById("currentUserLabel");
+const logoutButton = document.getElementById("logoutButton");
+
+function authSetMessage(message = "", state = "") {
+  authMessage.textContent = message;
+  authMessage.dataset.state = state;
+}
+
+function authShowForm(mode) {
+  loginForm.classList.toggle("hidden", mode !== "login");
+  passwordChangeForm.classList.toggle("hidden", mode !== "change");
+  initialSetupForm.classList.toggle("hidden", mode !== "setup");
+}
+
+async function driveRpc(functionName, payload = {}) {
+  if (!DRIVE_SB.url || !DRIVE_SB.key) throw new Error("Supabase ist nicht verbunden.");
+
+  const response = await fetch(`${DRIVE_SB.url}/rest/v1/rpc/${functionName}`, {
+    method:"POST",
+    headers:{
+      "apikey":DRIVE_SB.key,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify(payload)
+  });
+
+  const text = await response.text();
+  if (!response.ok) {
+    let message = text;
+    try {
+      const parsed = JSON.parse(text);
+      message = parsed.message || parsed.details || text;
+    } catch {}
+    throw new Error(message || `RPC ${functionName} fehlgeschlagen.`);
+  }
+
+  return text ? JSON.parse(text) : null;
+}
+
+function populateLoginEmployees() {
+  const active = employees
+    .filter(employee => employee.active)
+    .sort((a,b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`, "de"));
+
+  loginEmployee.innerHTML =
+    `<option value="">Mitarbeiter wählen …</option>` +
+    active.map(employee =>
+      `<option value="${employee.id}">${escapeHtml(employee.firstName)} ${escapeHtml(employee.lastName)}</option>`
+    ).join("");
+}
+
+async function driveAuthStatus() {
+  return await driveRpc("drive_auth_status", {});
+}
+
+async function driveSessionContext(token) {
+  return await driveRpc("drive_session_context", {p_token:token});
+}
+
+function driveApplyLoggedInContext(context) {
+  const employee = employees.find(item => item.id === context.employee_id);
+  if (!employee) throw new Error("Der angemeldete Mitarbeiter wurde nicht gefunden.");
+
+  currentEmployeeId = employee.id;
+  window.DRIVE_AUTH_CURRENT_EMPLOYEE_ID = employee.id;
+  window.DRIVE_AUTH_LOGGED_IN = true;
+
+  currentUserLabel.textContent = `${employee.firstName} ${employee.lastName}`;
+  logoutButton.classList.remove("hidden");
+  document.body.classList.remove("auth-locked");
+  authScreen.classList.add("hidden");
+
+  applyCurrentUserPermissions();
+
+  const currentPage = window.location.hash.replace("#", "") || "dashboard";
+  if (!driveCanOpenPage(currentPage)) showPage(currentPage);
+}
+
+async function driveRestoreSession() {
+  if (!driveAuthSessionToken) return false;
+
+  try {
+    const context = await driveSessionContext(driveAuthSessionToken);
+    if (!context || !context.employee_id) return false;
+
+    if (context.must_change) {
+      drivePendingEmployeeId = context.employee_id;
+      authTitle.textContent = "Passwort ändern";
+      authIntro.textContent = "Die vorläufige PIN muss zuerst durch ein eigenes Passwort bzw. eine eigene PIN ersetzt werden.";
+      authShowForm("change");
+      return true;
+    }
+
+    driveApplyLoggedInContext(context);
+    return true;
+  } catch (error) {
+    console.warn("Session konnte nicht wiederhergestellt werden", error);
+    localStorage.removeItem(DRIVE_AUTH_SESSION_KEY);
+    driveAuthSessionToken = "";
+    return false;
+  }
+}
+
+async function driveSetEmployeeTempPin(employeeId, pin) {
+  if (!driveAuthSessionToken) throw new Error("Bitte zuerst anmelden.");
+
+  const result = await driveRpc("drive_set_temp_pin", {
+    p_token:driveAuthSessionToken,
+    p_employee_id:employeeId,
+    p_temp_pin:pin
+  });
+
+  if (!result || result.ok !== true) {
+    throw new Error(result?.message || "PIN konnte nicht gespeichert werden.");
+  }
+  return result;
+}
+
+async function driveInitialSetup(employeeId, password) {
+  const result = await driveRpc("drive_initial_owner_setup", {
+    p_employee_id:employeeId,
+    p_password:password
+  });
+
+  if (!result || !result.token) {
+    throw new Error(result?.message || "Ersteinrichtung fehlgeschlagen.");
+  }
+
+  driveAuthSessionToken = result.token;
+  localStorage.setItem(DRIVE_AUTH_SESSION_KEY, driveAuthSessionToken);
+  return result;
+}
+
+loginForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  authSetMessage("Anmeldung wird geprüft …", "working");
+
+  try {
+    const employeeId = loginEmployee.value;
+    const password = loginPassword.value;
+
+    const result = await driveRpc("drive_login", {
+      p_employee_id:employeeId,
+      p_password:password
+    });
+
+    if (!result || !result.token) {
+      throw new Error(result?.message || "Anmeldung nicht möglich.");
+    }
+
+    driveAuthSessionToken = result.token;
+    localStorage.setItem(DRIVE_AUTH_SESSION_KEY, driveAuthSessionToken);
+
+    if (result.must_change) {
+      drivePendingOldPassword = password;
+      drivePendingEmployeeId = employeeId;
+      loginPassword.value = "";
+      authTitle.textContent = "Passwort ändern";
+      authIntro.textContent = "Die vorläufige PIN wurde akzeptiert. Jetzt bitte ein eigenes Passwort bzw. eine eigene PIN festlegen.";
+      authShowForm("change");
+      authSetMessage("");
+      newPassword.focus();
+      return;
+    }
+
+    const context = await driveSessionContext(driveAuthSessionToken);
+    driveApplyLoggedInContext(context);
+  } catch (error) {
+    authSetMessage(error.message || "Anmeldung fehlgeschlagen.", "error");
+  }
+});
+
+passwordChangeForm.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (newPassword.value !== newPasswordRepeat.value) {
+    authSetMessage("Die beiden Eingaben stimmen nicht überein.", "error");
+    return;
+  }
+
+  if (newPassword.value.length < 4) {
+    authSetMessage("Mindestens 4 Zeichen verwenden.", "error");
+    return;
+  }
+
+  authSetMessage("Neues Passwort wird gespeichert …", "working");
+
+  try {
+    const result = await driveRpc("drive_change_password", {
+      p_token:driveAuthSessionToken,
+      p_old_password:drivePendingOldPassword || null,
+      p_new_password:newPassword.value
+    });
+
+    if (!result || result.ok !== true) {
+      throw new Error(result?.message || "Passwort konnte nicht geändert werden.");
+    }
+
+    drivePendingOldPassword = "";
+    newPassword.value = "";
+    newPasswordRepeat.value = "";
+
+    const context = await driveSessionContext(driveAuthSessionToken);
+    driveApplyLoggedInContext(context);
+  } catch (error) {
+    authSetMessage(error.message || "Passwortänderung fehlgeschlagen.", "error");
+  }
+});
+
+initialSetupForm.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (setupPassword.value !== setupPasswordRepeat.value) {
+    authSetMessage("Die beiden Eingaben stimmen nicht überein.", "error");
+    return;
+  }
+
+  authSetMessage("Ersteinrichtung wird gespeichert …", "working");
+
+  try {
+    await driveInitialSetup(setupEmployee.value, setupPassword.value);
+    const context = await driveSessionContext(driveAuthSessionToken);
+    driveApplyLoggedInContext(context);
+  } catch (error) {
+    authSetMessage(error.message || "Ersteinrichtung fehlgeschlagen.", "error");
+  }
+});
+
+logoutButton.addEventListener("click", async () => {
+  const token = driveAuthSessionToken;
+  localStorage.removeItem(DRIVE_AUTH_SESSION_KEY);
+  driveAuthSessionToken = "";
+  window.DRIVE_AUTH_LOGGED_IN = false;
+  window.DRIVE_AUTH_CURRENT_EMPLOYEE_ID = null;
+  currentEmployeeId = null;
+
+  try {
+    if (token) await driveRpc("drive_logout", {p_token:token});
+  } catch {}
+
+  window.location.reload();
+});
+
+async function initializeDriveAuth() {
+  /* Supabase-Initialisierung der bestehenden App abwarten. */
+  const started = Date.now();
+  while (!DRIVE_SB.ready && Date.now() - started < 15000) {
+    await new Promise(resolve => setTimeout(resolve, 150));
+  }
+
+  if (!DRIVE_SB.ready) {
+    authSetMessage("Supabase konnte nicht verbunden werden. Anmeldung derzeit nicht möglich.", "error");
+    return;
+  }
+
+  populateLoginEmployees();
+
+  try {
+    const status = await driveAuthStatus();
+
+    if (!status.has_credentials) {
+      const candidates = Array.isArray(status.setup_candidates) ? status.setup_candidates : [];
+      setupEmployee.innerHTML = candidates.map(item =>
+        `<option value="${item.id}">${escapeHtml(item.name)}</option>`
+      ).join("");
+
+      if (!candidates.length) {
+        authSetMessage("Für die Ersteinrichtung muss ein aktiver Mitarbeiter die Rolle Geschäftsinhaber besitzen.", "error");
+        return;
+      }
+
+      authTitle.textContent = "Ersteinrichtung";
+      authIntro.textContent = "Einmalig den Zugang des Geschäftsinhabers festlegen.";
+      authShowForm("setup");
+      return;
+    }
+
+    if (await driveRestoreSession()) return;
+
+    authTitle.textContent = "Anmelden";
+    authIntro.textContent = "Mitarbeiter auswählen und persönliche PIN bzw. Passwort eingeben.";
+    authShowForm("login");
+    loginEmployee.focus();
+  } catch (error) {
+    console.error("Login-Initialisierung", error);
+    authSetMessage("Anmeldedatenbank ist noch nicht eingerichtet. Bitte zuerst SUPABASE_LOGIN_v1.2.sql ausführen.", "error");
+  }
+}
+
+initializeDriveAuth();
 

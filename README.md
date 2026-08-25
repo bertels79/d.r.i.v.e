@@ -1,4 +1,4 @@
-# D.R.I.V.E. v1.1
+# D.R.I.V.E. v1.2
 
 **Donnerfaust Raucherei Inventory & Verwaltung Engine**
 
@@ -358,3 +358,26 @@ Der Smartphone-Breakpoint wurde auf 900 CSS-Pixel erweitert, weil einige mobile 
 
 ## Mobile Fit Patch
 Behebt horizontales Überlaufen von Lager-Kopfbereich, Aktionsbuttons und Tabs auf schmalen Smartphones.
+
+
+# v1.2 – Mitarbeiter-Anmeldung
+
+Neu:
+
+- D.R.I.V.E. startet mit einer Mitarbeiter-Anmeldung.
+- Beim Anlegen eines Mitarbeiters vergibt die Geschäftsführung eine vorläufige PIN.
+- Beim ersten Login muss diese PIN durch ein eigenes Passwort bzw. eine eigene PIN ersetzt werden.
+- Der aktuell angemeldete Mitarbeiter wird oben rechts angezeigt.
+- Navigation und Aktionsbuttons richten sich automatisch nach der zugewiesenen Rolle.
+- Rollenänderungen greifen spätestens bei der nächsten Anmeldung.
+- Kündigte/inaktive Mitarbeiter können sich nicht mehr anmelden.
+- Geschäftsführung kann durch Eintragen einer neuen vorläufigen PIN einen Zugang zurücksetzen.
+- Sessions laufen serverseitig nach 30 Tagen ab.
+
+## Vor dem Upload zwingend
+
+In Supabase den Inhalt von `SUPABASE_LOGIN_v1.2.sql` einmal vollständig im SQL Editor ausführen.
+
+Beim ersten Start nach der Migration erscheint die Ersteinrichtung. Dort wird einmalig das eigene Passwort des aktiven Geschäftsinhabers festgelegt.
+
+Hinweis: Die Anmeldung schützt die Bedienoberfläche und die Anmeldeinformationen. Die bestehenden Geschäftstabellen aus v1.1 besitzen weiterhin den zuvor eingerichteten anonymen API-Zugriff. Für eine vollständig serverseitige Erzwingung aller Rollenrechte müssten diese Tabellen in einem späteren Härtungsschritt ebenfalls auf sessionbasierte Datenbankfunktionen/RLS umgestellt werden.

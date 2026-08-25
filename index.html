@@ -11,7 +11,73 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 </head>
-<body>
+<body class="auth-locked">
+
+  <div class="drive-auth-screen" id="authScreen" aria-live="polite">
+    <section class="drive-auth-card">
+      <div class="auth-mark">⚡</div>
+      <div class="overline">D.R.I.V.E. · Zugang</div>
+      <h1 id="authTitle">Anmelden</h1>
+      <p id="authIntro">Mitarbeiter auswählen und persönliche PIN bzw. Passwort eingeben.</p>
+
+      <form id="loginForm" class="auth-form">
+        <label>
+          Mitarbeiter
+          <select id="loginEmployee" required>
+            <option value="">Mitarbeiter wählen …</option>
+          </select>
+        </label>
+
+        <label>
+          PIN / Passwort
+          <input id="loginPassword" type="password" autocomplete="current-password" required minlength="4" maxlength="64">
+        </label>
+
+        <button type="submit" class="period-button" id="loginButton">Anmelden</button>
+      </form>
+
+      <form id="passwordChangeForm" class="auth-form hidden">
+        <p class="auth-notice">Die vorläufige PIN muss beim ersten Anmelden ersetzt werden.</p>
+
+        <label>
+          Neues Passwort / neue PIN
+          <input id="newPassword" type="password" autocomplete="new-password" required minlength="4" maxlength="64">
+        </label>
+
+        <label>
+          Wiederholen
+          <input id="newPasswordRepeat" type="password" autocomplete="new-password" required minlength="4" maxlength="64">
+        </label>
+
+        <button type="submit" class="period-button">Neues Passwort speichern</button>
+      </form>
+
+      <form id="initialSetupForm" class="auth-form hidden">
+        <p class="auth-notice">Ersteinrichtung: Für den Geschäftsinhaber existiert noch kein Zugang. Einmalig ein eigenes Passwort festlegen.</p>
+
+        <label>
+          Geschäftsinhaber
+          <select id="setupEmployee" required></select>
+        </label>
+
+        <label>
+          Eigenes Passwort / PIN
+          <input id="setupPassword" type="password" autocomplete="new-password" required minlength="4" maxlength="64">
+        </label>
+
+        <label>
+          Wiederholen
+          <input id="setupPasswordRepeat" type="password" autocomplete="new-password" required minlength="4" maxlength="64">
+        </label>
+
+        <button type="submit" class="period-button">Ersteinrichtung abschließen</button>
+      </form>
+
+      <div id="authMessage" class="auth-message"></div>
+      <small class="auth-db-status">Zentrale Anmeldung über Supabase</small>
+    </section>
+  </div>
+
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="brand">
@@ -36,7 +102,7 @@
       <div class="sidebar-footer">
         <strong>Donnerfaust's Raucherei</strong>
         <span>Interne Verwaltung · 1889</span>
-        <span class="version">D.R.I.V.E. v1.1</span>
+        <span class="version">D.R.I.V.E. v1.2</span>
       </div>
     </aside>
 
@@ -49,7 +115,9 @@
         </div>
         <div class="topbar-info">
           <span id="currentDate"></span>
-          <strong>Geschäftsführung</strong><small id="supabaseSyncStatus" class="sync-status">Datenbank verbindet …</small>
+          <strong id="currentUserLabel">Nicht angemeldet</strong>
+          <button type="button" id="logoutButton" class="topbar-logout hidden">Abmelden</button>
+          <small id="supabaseSyncStatus" class="sync-status">Datenbank verbindet …</small>
         </div>
       </header>
 
@@ -200,6 +268,13 @@
                   <select id="employeeRoleSelect">
                     <option value="">Keine Rolle</option>
                   </select>
+                </label>
+
+                <label>
+                  Vorläufige PIN
+                  <input id="employeeTempPin" type="password" inputmode="numeric" autocomplete="new-password"
+                         minlength="4" maxlength="32" placeholder="Bei neuem Mitarbeiter erforderlich">
+                  <small class="field-hint">Neue Mitarbeiter melden sich zuerst mit dieser PIN an und müssen sie anschließend ändern. Beim Bearbeiten leer lassen, wenn die PIN unverändert bleiben soll.</small>
                 </label>
 
                 <label>

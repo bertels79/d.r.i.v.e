@@ -1931,3 +1931,161 @@ body.modal-open{overflow:hidden}
     padding:12px !important;
   }
 }
+
+
+/* =========================================================
+   LOGIN – v1.2
+   ========================================================= */
+
+body.auth-locked{
+  overflow:hidden;
+}
+
+body.auth-locked .app-shell{
+  pointer-events:none;
+  user-select:none;
+  filter:blur(2px);
+}
+
+.drive-auth-screen{
+  position:fixed;
+  inset:0;
+  z-index:3000;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  overflow-y:auto;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(195,146,65,.2), transparent 34%),
+    #1d0f08;
+}
+
+.drive-auth-screen.hidden{
+  display:none;
+}
+
+.drive-auth-card{
+  width:min(470px,100%);
+  padding:29px;
+  border:1px solid #a17a3b;
+  background:#ead29e;
+  color:#32190c;
+  box-shadow:0 20px 70px rgba(0,0,0,.5);
+}
+
+.auth-mark{
+  width:64px;
+  height:64px;
+  margin:0 auto 16px;
+  display:grid;
+  place-items:center;
+  border:1px solid #795021;
+  border-radius:50%;
+  font-size:2rem;
+}
+
+.drive-auth-card h1{
+  margin:6px 0 8px;
+  font-size:2.2rem;
+  text-align:center;
+}
+
+.drive-auth-card > .overline,
+.drive-auth-card > p{
+  text-align:center;
+}
+
+.auth-form{
+  display:grid;
+  gap:13px;
+  margin-top:22px;
+}
+
+.auth-form label{
+  display:grid;
+  gap:6px;
+  font-size:.82rem;
+  font-weight:700;
+}
+
+.auth-form input,
+.auth-form select{
+  width:100%;
+  min-height:46px;
+  padding:9px 10px;
+  border:1px solid #9c7a43;
+  background:#f4e4bb;
+  color:#2c180d;
+  font:inherit;
+}
+
+.auth-form button{
+  width:100%;
+  min-height:47px;
+}
+
+.auth-message{
+  min-height:24px;
+  margin-top:13px;
+  font-size:.84rem;
+  text-align:center;
+}
+
+.auth-message[data-state="error"]{
+  color:#8c281c;
+  font-weight:700;
+}
+
+.auth-message[data-state="working"]{
+  font-style:italic;
+}
+
+.auth-notice{
+  margin:0;
+  padding:10px;
+  border:1px solid rgba(115,76,31,.35);
+  background:rgba(255,255,255,.15);
+  font-size:.87rem;
+}
+
+.auth-db-status{
+  display:block;
+  margin-top:15px;
+  text-align:center;
+  opacity:.62;
+}
+
+.topbar-logout{
+  border:0;
+  background:transparent;
+  padding:2px 0;
+  color:inherit;
+  text-decoration:underline;
+  font:inherit;
+  font-size:.7rem;
+  cursor:pointer;
+}
+
+.field-hint{
+  font-weight:400;
+  line-height:1.35;
+  opacity:.72;
+}
+
+.hidden{
+  display:none !important;
+}
+
+@media (max-width:700px){
+  .drive-auth-screen{
+    padding:9px;
+    align-items:start;
+  }
+  .drive-auth-card{
+    margin-top:9px;
+    padding:20px 15px;
+  }
+  .drive-auth-card h1{
+    font-size:1.9rem !important;
+  }
+}

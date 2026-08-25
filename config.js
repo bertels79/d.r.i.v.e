@@ -10,7 +10,7 @@
 window.DRIVE_CONFIG = {
   appName: "D.R.I.V.E.",
   fullName: "Donnerfaust Raucherei Inventory & Verwaltung Engine",
-  version: "1.1",
+  version: "1.2",
   supabase: {
     url: "https://vhbgczaiawigbslouozt.supabase.co",
     publishableKey: "sb_publishable_feWh_tYFEqSJ9NHKrjoNGw_A_tcq1MK",
